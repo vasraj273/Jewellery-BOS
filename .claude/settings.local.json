@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir)",
+      "Bash(dir /b)",
+      "Bash(mkdir -p client/src/pages client/src/components/ui client/src/api client/src/styles server/src/routes server/src/controllers server/src/services server/src/database server/src/utils server/src/middleware templates database uploads docs)",
+      "Bash(npm install *)",
+      "Bash(cp -n server/.env.example server/.env)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5000/api/health)",
+      "Bash(curl -s -X POST http://localhost:5000/api/quotations/calculate -H \"Content-Type: application/json\" -d \"{\\\\\"net_weight\\\\\":5,\\\\\"gold_rate_per_gram\\\\\":5800,\\\\\"diamond_carat\\\\\":1,\\\\\"diamond_rate_per_carat\\\\\":85000,\\\\\"making_charge_type\\\\\":\\\\\"per_gram\\\\\",\\\\\"making_charge_value\\\\\":1200,\\\\\"shipping_charge\\\\\":500}\")",
+      "Bash(curl -s -X POST http://localhost:5000/api/quotations -H \"Content-Type: application/json\" -d \"{\\\\\"customer_name\\\\\":\\\\\"\\\\\",\\\\\"net_weight\\\\\":0}\")",
+      "Bash(curl -s -X POST http://localhost:5000/api/quotations/preview-draft -H \"Content-Type: application/json\" -d \"{\\\\\"customer_name\\\\\":\\\\\"Test User\\\\\",\\\\\"product_category\\\\\":\\\\\"Ring\\\\\",\\\\\"product_name\\\\\":\\\\\"Eternal Bloom\\\\\",\\\\\"purity\\\\\":\\\\\"18Kt\\\\\",\\\\\"metal_type\\\\\":\\\\\"Gold\\\\\",\\\\\"metal_color\\\\\":\\\\\"Yellow\\\\\",\\\\\"net_weight\\\\\":5,\\\\\"gold_rate_per_gram\\\\\":5800,\\\\\"diamond_carat\\\\\":1,\\\\\"diamond_rate_per_carat\\\\\":85000,\\\\\"making_charge_type\\\\\":\\\\\"per_gram\\\\\",\\\\\"making_charge_value\\\\\":1200,\\\\\"shipping_charge\\\\\":500,\\\\\"hallmark_charge\\\\\":250}\")",
+      "Bash(curl -s -X POST http://localhost:5000/api/quotations -H \"Content-Type: application/json\" -d \"{\\\\\"customer_name\\\\\":\\\\\"Test User\\\\\",\\\\\"customer_mobile\\\\\":\\\\\"+91 98700 00000\\\\\",\\\\\"customer_email\\\\\":\\\\\"test@x.in\\\\\",\\\\\"occasion\\\\\":\\\\\"Anniversary\\\\\",\\\\\"product_name\\\\\":\\\\\"Eternal Bloom\\\\\",\\\\\"product_category\\\\\":\\\\\"Ring\\\\\",\\\\\"product_description\\\\\":\\\\\"Test description\\\\\",\\\\\"purity\\\\\":\\\\\"18Kt\\\\\",\\\\\"metal_type\\\\\":\\\\\"Gold\\\\\",\\\\\"metal_color\\\\\":\\\\\"Yellow\\\\\",\\\\\"net_weight\\\\\":5,\\\\\"gross_weight\\\\\":5.2,\\\\\"gold_rate_per_gram\\\\\":5800,\\\\\"diamond_type\\\\\":\\\\\"Natural\\\\\",\\\\\"diamond_shape\\\\\":\\\\\"Round\\\\\",\\\\\"diamond_carat\\\\\":1,\\\\\"diamond_rate_per_carat\\\\\":85000,\\\\\"making_charge_type\\\\\":\\\\\"per_gram\\\\\",\\\\\"making_charge_value\\\\\":1200,\\\\\"shipping_charge\\\\\":500,\\\\\"hallmark_charge\\\\\":250,\\\\\"sales_executive\\\\\":\\\\\"Priya Mehta\\\\\"}\")",
+      "Bash(curl -s -o /tmp/test.pdf -w \"PDF: %{http_code} %{size_download} bytes\\\\n\" http://localhost:5000/api/quotations/QT-2026-0003/pdf)",
+      "Read(//tmp/**)",
+      "Bash(xxd)",
+      "Bash(curl -s -o /tmp/test.pdf -w \"HTTP %{http_code} %{size_download} bytes\\\\n\" http://localhost:5000/api/quotations/QT-2026-0003/pdf)",
+      "PowerShell($conns = Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue; if \\($conns\\) { $conns | Select-Object LocalAddress,LocalPort,OwningProcess | Format-Table -AutoSize; $conns | ForEach-Object { Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,Path } } else { \"Port 5000 free\" })",
+      "PowerShell(Get-Process -Id 18816 -ErrorAction SilentlyContinue)",
+      "Bash(curl -s http://localhost:5000/api/rates/gold/latest)",
+      "Bash(curl -s -X POST http://localhost:5000/api/rates/gold/refresh)",
+      "Bash(curl -s -X POST http://localhost:5000/api/rates/gold/manual -H \"Content-Type: application/json\" -d \"{\\\\\"purity\\\\\":\\\\\"18Kt\\\\\",\\\\\"rate_per_gram\\\\\":6000}\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5000 -State Listen -EA SilentlyContinue | %% { Stop-Process -Id $_.OwningProcess -Force }; Start-Sleep 1; \"FREE\")",
+      "PowerShell($c = Get-NetTCPConnection -LocalPort 5000 -State Listen -EA SilentlyContinue; if \\($c\\) { $c | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }; \"KILLED\" } else { \"FREE\" })",
+      "Bash(curl -s http://localhost:5000/api/quotations/QT-2026-0003)",
+      "Bash(python3 -c \"import sys,json; q=json.load\\(sys.stdin\\)['data']; print\\('quote rate:', q['gold_rate_per_gram'], '| latest 18Kt: 6000 | FROZEN:', q['gold_rate_per_gram']!=6000\\)\")",
+      "Bash(curl -s http://localhost:5000/api/rates/gold/locations)",
+      "Bash(curl -s \"http://localhost:5000/api/rates/gold/latest?location=Ahmedabad\")",
+      "Bash(curl -s \"http://localhost:5000/api/rates/gold/latest?location=Mumbai\")",
+      "Bash(curl -s -X POST http://localhost:5000/api/rates/gold/manual -H \"Content-Type: application/json\" -d \"{\\\\\"location\\\\\":\\\\\"Delhi\\\\\",\\\\\"purity\\\\\":\\\\\"22Kt\\\\\",\\\\\"rate_per_gram\\\\\":8000,\\\\\"is_override\\\\\":1}\")",
+      "Bash(curl -s \"http://localhost:5000/api/rates/gold/latest?location=Delhi\")",
+      "Bash(curl -s -X POST http://localhost:5000/api/rates/gold/clear-override -H \"Content-Type: application/json\" -d \"{\\\\\"location\\\\\":\\\\\"Delhi\\\\\",\\\\\"purity\\\\\":\\\\\"22Kt\\\\\"}\")",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\)['data'];row=[r for r in d if r['purity']=='22Kt'][0];print\\(f\\\\\"22Kt now: ₹{row['rate_per_gram']} source={row['source']} override={row['is_override']}\\\\\"\\)\")",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\)['data'];row=[r for r in d if r['purity']=='22Kt'][0];print\\('22Kt rate=' + str\\(row['rate_per_gram']\\) + ' source=' + row['source'] + ' override=' + str\\(row['is_override']\\)\\)\")",
+      "Bash(curl -s -X POST http://localhost:5000/api/quotations -H \"Content-Type: application/json\" -d \"{\\\\\"customer_name\\\\\":\\\\\"Loc Test\\\\\",\\\\\"product_category\\\\\":\\\\\"Ring\\\\\",\\\\\"purity\\\\\":\\\\\"22Kt\\\\\",\\\\\"metal_type\\\\\":\\\\\"Gold\\\\\",\\\\\"net_weight\\\\\":3,\\\\\"gold_rate_per_gram\\\\\":7127,\\\\\"pricing_location\\\\\":\\\\\"Delhi\\\\\",\\\\\"making_charge_type\\\\\":\\\\\"per_gram\\\\\",\\\\\"making_charge_value\\\\\":1200}\")",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\)['data'];print\\('quote_id=' + d['quote_id'] + ' location=' + str\\(d.get\\('pricing_location'\\)\\) + ' gold_rate=' + str\\(d['gold_rate_per_gram']\\) + ' final=' + str\\(d['final_price']\\)\\)\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Projects\\Jewelery Business Operating System\\client\\src"
+    ]
+  }
+}

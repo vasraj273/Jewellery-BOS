@@ -1,0 +1,26 @@
+{
+  "name": "jbos-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "JBOS Express + SQLite + Puppeteer backend",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "db:init": "node src/database/init.js",
+    "db:seed": "node src/database/seed.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "multer": "^2.0.0",
+    "node-cron": "^3.0.3",
+    "puppeteer": "^24.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}
