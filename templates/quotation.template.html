@@ -6,6 +6,11 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Lock Puppeteer to A4 portrait with zero printer margin — the .page
+   block itself owns all visual padding. Also stops the PDF from inheriting
+   the browser viewport size when previewed. */
+@page { size: A4 portrait; margin: 0; }
+
 :root {
   --gold:       #C5A028;
   --gold-light: #E8D5A3;
@@ -31,29 +36,34 @@ html, body {
   print-color-adjust: exact;
 }
 
-.page { background: var(--white); width: 210mm; min-height: 297mm; position: relative; overflow: hidden; }
+/* Centre .page in any browser preview iframe so the empty right gutter
+   becomes symmetrical breathing room instead of an asymmetric blank. PDF
+   render ignores body layout because @page above takes over. */
+body { display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+
+.page { background: var(--white); width: 210mm; min-height: 297mm; position: relative; overflow: hidden; margin: 0 auto; }
 .page-frame { position: absolute; inset: 9px; border: 0.8px solid var(--gold-light); pointer-events: none; z-index: 10; }
 .corner { position: absolute; width: 24px; height: 24px; z-index: 11; }
 .corner-tl { top: 3px; left: 3px; border-top: 2px solid var(--gold); border-left: 2px solid var(--gold); }
 .corner-tr { top: 3px; right: 3px; border-top: 2px solid var(--gold); border-right: 2px solid var(--gold); }
 .corner-bl { bottom: 3px; left: 3px; border-bottom: 2px solid var(--gold); border-left: 2px solid var(--gold); }
 .corner-br { bottom: 3px; right: 3px; border-bottom: 2px solid var(--gold); border-right: 2px solid var(--gold); }
-.inner { padding: 44px 50px 36px; position: relative; }
+.inner { padding: 34px 38px 28px; position: relative; }
 
 .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; }
 .logo-mark { width: 52px; height: 52px; border: 1.2px solid var(--gold); display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0; }
 .logo-mark::before { content:''; position:absolute; inset:4px; border:0.4px solid var(--gold-light); }
 .logo-block { display:flex; flex-direction:column; gap:8px; }
 .logo-row { display:flex; align-items:center; gap:12px; }
-.company-name { font-family: var(--serif); font-size: 22px; font-weight: 700; letter-spacing: 3px; color: var(--black); text-transform: uppercase; line-height: 1; }
-.company-tagline { font-size: 8.5px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); font-weight: 400; margin-top: 2px; font-family: var(--sans); }
-.company-info { text-align: right; font-size: 10px; color: var(--ink-muted); line-height: 1.85; letter-spacing: 0.3px; font-family: var(--sans); }
+.company-name { font-family: var(--serif); font-size: 26px; font-weight: 700; letter-spacing: 3px; color: var(--black); text-transform: uppercase; line-height: 1; }
+.company-tagline { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); font-weight: 400; margin-top: 3px; font-family: var(--sans); }
+.company-info { text-align: right; font-size: 11px; color: var(--ink-muted); line-height: 1.85; letter-spacing: 0.3px; font-family: var(--sans); }
 .gst-badge { margin-top: 5px; display: inline-block; font-size: 8.5px; letter-spacing: 1px; color: var(--ink-mid); border: 0.5px solid var(--border); padding: 2px 8px; text-transform: uppercase; font-family: var(--sans); }
 
 .gold-rule { height: 0.8px; background: linear-gradient(to right, transparent 0%, var(--gold) 15%, var(--gold) 85%, transparent 100%); margin: 0 0 18px; }
 
 .doc-title-bar { display: flex; align-items: center; justify-content: space-between; background: var(--black); padding: 11px 20px; margin-bottom: 18px; }
-.doc-title { font-family: var(--serif); font-size: 15px; font-weight: 400; letter-spacing: 5px; text-transform: uppercase; color: var(--gold); }
+.doc-title { font-family: var(--serif); font-size: 17px; font-weight: 400; letter-spacing: 5px; text-transform: uppercase; color: var(--gold); }
 .doc-ornament { display: flex; align-items: center; gap: 8px; color: var(--gold-light); font-size: 8px; letter-spacing: 2px; text-transform: uppercase; font-family: var(--sans); }
 .star { color: var(--gold); font-size: 10px; }
 
@@ -62,8 +72,8 @@ html, body {
 .meta-card::before { content:''; position:absolute; top:0; left:0; width:2.5px; height:100%; background:var(--gold); }
 .meta-card-title { font-size: 7.5px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 9px; font-family: var(--sans); }
 .meta-grid { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; }
-.meta-label { color:var(--ink-muted); font-size:9.5px; letter-spacing:0.3px; white-space:nowrap; font-family:var(--sans); }
-.meta-value { color:var(--ink); font-weight:600; font-size:9.5px; font-family:var(--sans); }
+.meta-label { color:var(--ink-muted); font-size:10.5px; letter-spacing:0.3px; white-space:nowrap; font-family:var(--sans); }
+.meta-value { color:var(--ink); font-weight:600; font-size:10.5px; font-family:var(--sans); }
 
 .meta-value-row { display: flex; align-items: center; gap: 8px; }
 .status-badge { display: inline-flex; align-items: center; gap: 4px; background: #111111; color: var(--gold); font-size: 7px; font-weight: 600; letter-spacing: 1.8px; text-transform: uppercase; padding: 2px 7px; font-family: var(--sans); position: relative; }
@@ -89,49 +99,49 @@ html, body {
 .img-sublabel { color:var(--gold); font-size:7px; letter-spacing:1px; }
 
 .product-details { flex: 1; padding: 18px 22px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
-.product-name { font-family: var(--serif); font-size: 21px; font-weight: 700; color: var(--black); line-height: 1.2; }
+.product-name { font-family: var(--serif); font-size: 25px; font-weight: 700; color: var(--black); line-height: 1.2; }
 .product-category-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--gold-pale); border: 0.5px solid var(--gold-light); padding: 3px 10px; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold-dark); width: fit-content; font-family: var(--sans); font-weight: 600; }
-.product-desc { font-size: 9px; color: var(--ink-mid); line-height: 1.75; letter-spacing: 0.15px; font-family: var(--sans); }
+.product-desc { font-size: 10.5px; color: var(--ink-mid); line-height: 1.75; letter-spacing: 0.15px; font-family: var(--sans); }
 
-.spec-grid-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 18px; table-layout: fixed; }
+.spec-grid-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 18px; table-layout: fixed; }
 .spec-grid-table thead tr { background: var(--black); }
 .spec-grid-table thead th { font-size: 7.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); font-weight: 600; padding: 8px 12px; text-align: left; font-family: var(--sans); }
 .spec-grid-table tbody td { padding: 8px 12px; border-bottom: 0.4px solid var(--border); vertical-align: middle; }
 .spec-grid-table tbody tr:nth-child(odd) td { background: var(--off-white); }
-.cell-label { font-size: 8.5px; color: var(--ink-muted); letter-spacing: 0.2px; display: block; margin-bottom: 1px; font-family: var(--sans); }
-.cell-value { font-size: 10px; color: var(--ink); font-weight: 600; font-family: var(--sans); }
+.cell-label { font-size: 9.5px; color: var(--ink-muted); letter-spacing: 0.2px; display: block; margin-bottom: 2px; font-family: var(--sans); }
+.cell-value { font-size: 11.5px; color: var(--ink); font-weight: 600; font-family: var(--sans); }
 
-.price-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 18px; table-layout: fixed; }
+.price-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 18px; table-layout: fixed; }
 .price-table thead tr { background: var(--black); }
 .price-table thead th { font-size: 7.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); font-weight: 600; padding: 8px 12px; text-align: left; font-family: var(--sans); }
 .price-table thead th:last-child { text-align: right; }
 .price-table thead th:nth-child(2), .price-table thead th:nth-child(3) { text-align: center; }
 .price-table tbody tr { border-bottom: 0.4px solid var(--border); }
 .price-table tbody tr:nth-child(odd) { background: var(--off-white); }
-.price-table tbody td { padding: 7px 12px; font-size: 10px; font-family: var(--sans); }
+.price-table tbody td { padding: 8px 12px; font-size: 11px; font-family: var(--sans); }
 .price-table tbody td:last-child { text-align:right; font-weight:600; }
 .price-table tbody td:nth-child(2), .price-table tbody td:nth-child(3) { text-align:center; color:var(--ink-mid); }
 .price-table tbody td.desc-cell { font-size:10px; color:var(--ink); }
 .price-table tbody td .note { font-size:8px; color:var(--ink-muted); display:block; }
-.price-table tr.subtotal-row td { border-top: 0.5px solid var(--border); background: #F0EAD6 !important; padding: 8px 12px; font-weight: 600; font-size: 10px; }
-.price-table tr.gst-row td { background: #F0EAD6 !important; padding: 6px 12px; color: var(--ink-mid); font-size: 9.5px; }
+.price-table tr.subtotal-row td { border-top: 0.5px solid var(--border); background: #F0EAD6 !important; padding: 9px 12px; font-weight: 600; font-size: 11.5px; }
+.price-table tr.gst-row td { background: #F0EAD6 !important; padding: 7px 12px; color: var(--ink-mid); font-size: 11px; }
 .price-table tr.total-row td { border: none !important; padding: 0; background: transparent !important; }
 
 .total-investment-block { background: var(--black); position: relative; overflow: hidden; }
 .total-investment-block::before { content: ''; display: block; height: 2px; background: linear-gradient(to right, var(--gold-dark), var(--gold), var(--gold-light), var(--gold), var(--gold-dark)); }
-.total-inner { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
+.total-inner { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; }
 .total-left { display: flex; flex-direction: column; gap: 3px; }
 .total-eyebrow { font-size: 7px; letter-spacing: 3px; text-transform: uppercase; color: rgba(197,160,40,0.55); font-family: var(--sans); font-weight: 400; }
-.total-label { font-family: var(--serif); font-size: 16px; font-weight: 400; letter-spacing: 3.5px; text-transform: uppercase; color: var(--gold); line-height: 1.1; }
+.total-label { font-family: var(--serif); font-size: 19px; font-weight: 400; letter-spacing: 3.5px; text-transform: uppercase; color: var(--gold); line-height: 1.1; }
 .total-incl { font-size: 7.5px; color: rgba(197,160,40,0.45); letter-spacing: 1px; text-transform: uppercase; font-family: var(--sans); margin-top: 2px; }
 .total-right { text-align: right; }
 .total-currency { font-size: 9px; color: rgba(197,160,40,0.6); letter-spacing: 1px; font-family: var(--sans); font-weight: 400; display: block; margin-bottom: 1px; }
-.total-amount { font-family: var(--serif); font-size: 26px; font-weight: 700; color: var(--gold); letter-spacing: 1.5px; line-height: 1; }
+.total-amount { font-family: var(--serif); font-size: 32px; font-weight: 700; color: var(--gold); letter-spacing: 1.5px; line-height: 1; }
 .total-investment-block::after { content: 'AURUM'; position: absolute; bottom: 6px; right: 18px; font-family: var(--serif); font-size: 7px; letter-spacing: 4px; color: rgba(197,160,40,0.12); text-transform: uppercase; pointer-events: none; }
 
 .terms-box { background: var(--off-white); border: 0.5px solid var(--border); border-left: 2px solid var(--gold); padding: 11px 18px; margin-bottom: 16px; }
 .terms-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
-.terms-list li { font-size: 8.5px; color: var(--ink-mid); line-height: 1.55; display: flex; align-items: baseline; gap: 7px; letter-spacing: 0.15px; font-family: var(--sans); }
+.terms-list li { font-size: 10px; color: var(--ink-mid); line-height: 1.6; display: flex; align-items: baseline; gap: 7px; letter-spacing: 0.15px; font-family: var(--sans); }
 .terms-list li::before { content: '◆'; font-size: 5px; color: var(--gold); flex-shrink: 0; }
 .terms-list li strong { color: var(--ink); font-weight:600; }
 
@@ -145,7 +155,7 @@ html, body {
 .dfm-item { display: flex; flex-direction: column; gap: 1px; padding: 0 16px 0 0; border-right: 0.5px solid var(--border); margin-right: 16px; }
 .dfm-item:last-of-type { border-right: none; margin-right: 0; }
 .dfm-label { font-size: 7px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-muted); font-family: var(--sans); }
-.dfm-value { font-size: 9.5px; color: var(--ink); font-weight: 600; font-family: var(--sans); letter-spacing: 0.2px; }
+.dfm-value { font-size: 10.5px; color: var(--ink); font-weight: 600; font-family: var(--sans); letter-spacing: 0.2px; }
 .dfm-status { font-size: 8px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #2A7A4A; font-family: var(--sans); display: flex; align-items: center; gap: 4px; }
 .dfm-status::before { content: ''; display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #3DAA6A; flex-shrink: 0; }
 .digital-footer-note { margin-top: 8px; padding-top: 7px; border-top: 0.4px solid var(--border); display: flex; align-items: center; justify-content: space-between; }

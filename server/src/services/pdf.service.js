@@ -23,7 +23,13 @@ export async function generatePdf(html) {
   const browser = await getBrowser();
   const page = await browser.newPage();
   try {
+    // A4 portrait at 96 DPI ≈ 794 × 1123 px. Matching the viewport to the
+    // page size keeps layout calculations identical between on-screen render
+    // and PDF render, so the template's 210 mm .page fills the sheet
+    // edge-to-edge with no asymmetric whitespace.
+    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 });
     await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.emulateMediaType('print');
     const pdf = await page.pdf({
       format: 'A4',
       printBackground: true,
