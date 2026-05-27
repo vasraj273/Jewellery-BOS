@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { quotationsApi } from '../api/client.js';
+import { openQuotationPdf } from '../api/pdfActions.js';
 import SendWhatsAppButton from '../components/SendWhatsAppButton.jsx';
 
 const STATUS_STYLES = {
@@ -18,6 +19,12 @@ export default function QuotationHistory() {
   function reload() {
     setLoading(true);
     quotationsApi.list().then(setRows).finally(() => setLoading(false));
+  }
+
+  function handlePdf(quoteId) {
+    // Fetched through axios so the JWT goes with it; opened in a new tab via
+    // blob URL. Plain <a href> bypasses our axios interceptor.
+    openQuotationPdf(quoteId).catch(() => {});
   }
 
   return (
@@ -63,7 +70,12 @@ export default function QuotationHistory() {
                   </td>
                   <td className="px-4 py-3 text-right space-x-3 whitespace-nowrap">
                     <Link to={`/quotations/${q.quote_id}`} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Preview</Link>
-                    <a href={quotationsApi.pdfUrl(q.quote_id)} target="_blank" rel="noreferrer" className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">PDF</a>
+                    <button
+                      onClick={() => handlePdf(q.quote_id)}
+                      className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold"
+                    >
+                      PDF
+                    </button>
                     <SendWhatsAppButton
                       quoteId={q.quote_id}
                       variant="link"
@@ -117,14 +129,12 @@ export default function QuotationHistory() {
                 >
                   Preview
                 </Link>
-                <a
-                  href={quotationsApi.pdfUrl(q.quote_id)}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  onClick={() => handlePdf(q.quote_id)}
                   className="flex-1 min-w-[90px] text-center text-xs uppercase tracking-widest px-3 py-2 border border-gold-light text-ink hover:border-gold"
                 >
                   PDF
-                </a>
+                </button>
                 <div className="flex-1 min-w-[120px]">
                   <SendWhatsAppButton
                     quoteId={q.quote_id}

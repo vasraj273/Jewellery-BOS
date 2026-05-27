@@ -37,8 +37,13 @@ export const quotationsApi = {
   calculate: (payload)          => api.post('/quotations/calculate', payload).then(r => r.data.data),
   previewDraft: (payload)       => api.post('/quotations/preview-draft', payload, { responseType: 'text' }).then(r => r.data),
   remove:    (id)               => api.delete(`/quotations/${id}`).then(r => r.data),
-  previewUrl: (id)              => `${API_ROOT}/quotations/${id}/preview`,
-  pdfUrl:     (id)              => `${API_ROOT}/quotations/${id}/pdf`,
+
+  // Auth-aware fetchers — go through axios so the JWT goes with them.
+  // Plain <iframe src> / <a href> bypass interceptors and 401 on protected
+  // endpoints. Components feed iframe via srcDoc and open PDF as a blob URL.
+  previewHtml: (id)             => api.get(`/quotations/${id}/preview`, { responseType: 'text' }).then(r => r.data),
+  pdfBlob:     (id)             => api.get(`/quotations/${id}/pdf`,     { responseType: 'blob' }).then(r => r.data),
+
   sendWhatsApp: (id)            => api.post(`/quotations/${id}/whatsapp/send`).then(r => r.data),
   whatsappConfig: ()            => api.get('/quotations/whatsapp/config').then(r => r.data.data)
 };
