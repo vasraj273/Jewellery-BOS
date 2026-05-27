@@ -4,16 +4,16 @@ import { renderQuotationHtml } from '../services/template.service.js';
 import { generatePdf } from '../services/pdf.service.js';
 import * as whatsapp from '../services/whatsapp.service.js';
 
-export function list(req, res, next) {
+export async function list(req, res, next) {
   try {
-    const rows = quotationService.listAll();
+    const rows = await quotationService.listAll();
     res.json({ success: true, data: rows });
   } catch (e) { next(e); }
 }
 
-export function getOne(req, res, next) {
+export async function getOne(req, res, next) {
   try {
-    const row = quotationService.findByQuoteId(req.params.quoteId);
+    const row = await quotationService.findByQuoteId(req.params.quoteId);
     if (!row) return res.status(404).json({ success: false, error: 'Not found' });
     res.json({ success: true, data: row });
   } catch (e) { next(e); }
@@ -36,7 +36,7 @@ export function previewDraft(req, res, next) {
       ...pricing,
       quote_id: input.quote_id || 'QT-DRAFT',
       status: 'draft',
-      created_at: new Date().toISOString(),
+      created_at: new Date(),
       valid_till: input.valid_till || defaultValidTill()
     };
     const html = renderQuotationHtml(draft);
@@ -51,16 +51,16 @@ function defaultValidTill() {
   return d.toISOString().slice(0, 10);
 }
 
-export function create(req, res, next) {
+export async function create(req, res, next) {
   try {
-    const saved = quotationService.create(req.body);
+    const saved = await quotationService.create(req.body);
     res.status(201).json({ success: true, data: saved });
   } catch (e) { next(e); }
 }
 
 export async function preview(req, res, next) {
   try {
-    const row = quotationService.findByQuoteId(req.params.quoteId);
+    const row = await quotationService.findByQuoteId(req.params.quoteId);
     if (!row) return res.status(404).send('Quotation not found');
     const html = renderQuotationHtml(row);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -70,7 +70,7 @@ export async function preview(req, res, next) {
 
 export async function pdf(req, res, next) {
   try {
-    const row = quotationService.findByQuoteId(req.params.quoteId);
+    const row = await quotationService.findByQuoteId(req.params.quoteId);
     if (!row) return res.status(404).json({ success: false, error: 'Not found' });
     const html = renderQuotationHtml(row);
     const buffer = await generatePdf(html);
@@ -80,9 +80,9 @@ export async function pdf(req, res, next) {
   } catch (e) { next(e); }
 }
 
-export function remove(req, res, next) {
+export async function remove(req, res, next) {
   try {
-    const ok = quotationService.remove(req.params.quoteId);
+    const ok = await quotationService.remove(req.params.quoteId);
     if (!ok) return res.status(404).json({ success: false, error: 'Not found' });
     res.json({ success: true });
   } catch (e) { next(e); }
@@ -91,7 +91,7 @@ export function remove(req, res, next) {
 export async function sendWhatsApp(req, res, next) {
   try {
     const result = await whatsapp.sendQuotation(req.params.quoteId);
-    const updated = quotationService.findByQuoteId(req.params.quoteId);
+    const updated = await quotationService.findByQuoteId(req.params.quoteId);
     res.status(result.ok ? 200 : 502).json({ success: result.ok, data: { ...result, quotation: updated } });
   } catch (e) { next(e); }
 }

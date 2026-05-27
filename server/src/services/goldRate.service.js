@@ -1,4 +1,4 @@
-import { getDatabase } from '../database/connection.js';
+import { getDb } from '../database/connection.js';
 import { getGoldProvider, getSupportedLocations } from './providers/goldProvider.js';
 import { applyMarkup, getMarkupConfig } from './indiaMarkup.service.js';
 
@@ -6,8 +6,8 @@ import { applyMarkup, getMarkupConfig } from './indiaMarkup.service.js';
  * GoldRateService — location-aware single source of truth.
  *
  * Resolution order for (location, purity):
- *   1. Active manual override (is_override = 1)            ← admin wins
- *   2. Latest live rate (most recent updated_at)
+ *   1. Active manual override (is_override = true)            ← admin wins
+ *   2. Latest live rate (most recent updated_at, then id)
  *
  * Frozen snapshot: quotations stamp rate at creation time. Future refreshes
  * never mutate historic rows.
@@ -15,19 +15,19 @@ import { applyMarkup, getMarkupConfig } from './indiaMarkup.service.js';
 
 export async function refresh() {
   const provider = getGoldProvider();
-  const db = getDatabase();
+  const sql = getDb();
   try {
     const raw = await provider.fetchRates();
     const adjusted = applyMarkup(raw.rates, raw.source);
 
-    const stmt = db.prepare(`
-      INSERT INTO gold_rates (location, purity, rate_per_gram, source, is_override, effective_date, updated_at)
-      VALUES (?, ?, ?, ?, 0, date('now'), datetime('now'))
-    `);
-    const tx = db.transaction((rows) => {
-      for (const r of rows) stmt.run(r.location || 'Mumbai', r.purity, r.rate_per_gram, adjusted.source);
+    await sql.begin(async (tx) => {
+      for (const r of adjusted.rates) {
+        await tx`
+          INSERT INTO gold_rates (location, purity, rate_per_gram, source, is_override, effective_date, updated_at)
+          VALUES (${r.location || 'Mumbai'}, ${r.purity}, ${r.rate_per_gram}, ${adjusted.source}, false, current_date, now())
+        `;
+      }
     });
-    tx(adjusted.rates);
 
     console.log(`[GoldRate] Refreshed ${adjusted.rates.length} rates (${adjusted.source}${adjusted.applied ? ` +${adjusted.pct}%` : ''})`);
     return { ok: true, source: adjusted.source, markup_pct: adjusted.pct, count: adjusted.rates.length };
@@ -37,7 +37,72 @@ export async function refresh() {
   }
 }
 
-/** Public read of current markup config (for frontend transparency). */
+/** All locations that have at least one rate, unioned with provider-supported list. */
+export async function listLocations() {
+  const sql = getDb();
+  const rows = await sql`SELECT DISTINCT location FROM gold_rates ORDER BY location`;
+  const fromDb = rows.map((r) => r.location);
+  const merged = new Set([...getSupportedLocations(), ...fromDb]);
+  return [...merged].sort();
+}
+
+/** Latest effective rate per (location, purity) — override wins, else newest. */
+export async function getLatest(location) {
+  const sql = getDb();
+  if (location) {
+    return sql`
+      SELECT location, purity, rate_per_gram, source, is_override, updated_at
+      FROM gold_rates g
+      WHERE location = ${location}
+        AND id = (
+          SELECT id FROM gold_rates
+          WHERE location = g.location AND purity = g.purity
+          ORDER BY is_override DESC, updated_at DESC, id DESC
+          LIMIT 1
+        )
+      ORDER BY purity
+    `;
+  }
+  return sql`
+    SELECT location, purity, rate_per_gram, source, is_override, updated_at
+    FROM gold_rates g
+    WHERE id = (
+      SELECT id FROM gold_rates
+      WHERE location = g.location AND purity = g.purity
+      ORDER BY is_override DESC, updated_at DESC, id DESC
+      LIMIT 1
+    )
+    ORDER BY location, purity
+  `;
+}
+
+export async function getLatestForPurity(purity, location) {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT location, purity, rate_per_gram, source, is_override, updated_at
+    FROM gold_rates
+    WHERE purity = ${purity} AND location = ${location}
+    ORDER BY is_override DESC, updated_at DESC, id DESC
+    LIMIT 1
+  `;
+  return rows[0] || null;
+}
+
+/** Insert manual override row. is_override defaults to true. */
+export async function manualUpsert({ location, purity, rate_per_gram, is_override = true }) {
+  if (!location || !purity || !(rate_per_gram > 0)) {
+    const err = new Error('location, purity and rate_per_gram > 0 required');
+    err.status = 400;
+    throw err;
+  }
+  const sql = getDb();
+  await sql`
+    INSERT INTO gold_rates (location, purity, rate_per_gram, source, is_override, effective_date, updated_at)
+    VALUES (${location}, ${purity}, ${rate_per_gram}, 'manual', ${!!is_override}, current_date, now())
+  `;
+}
+
+/** Public read of provider + markup config (frontend transparency). */
 export function getConfig() {
   const m = getMarkupConfig();
   return {
@@ -47,77 +112,17 @@ export function getConfig() {
   };
 }
 
-/** All locations with at least one rate (DB-derived) merged with provider-supported list. */
-export function listLocations() {
-  const fromDb = getDatabase()
-    .prepare(`SELECT DISTINCT location FROM gold_rates ORDER BY location`)
-    .all()
-    .map((r) => r.location);
-  const merged = new Set([...getSupportedLocations(), ...fromDb]);
-  return [...merged].sort();
-}
-
-/** Latest effective rate per (location, purity) — override wins, else newest. */
-export function getLatest(location) {
-  const db = getDatabase();
-  if (location) {
-    return db.prepare(`
-      SELECT location, purity, rate_per_gram, source, is_override, updated_at
-      FROM gold_rates AS g
-      WHERE location = ?
-        AND id = (
-          SELECT id FROM gold_rates
-          WHERE location = g.location AND purity = g.purity
-          ORDER BY is_override DESC, updated_at DESC, id DESC
-          LIMIT 1
-        )
-      ORDER BY purity
-    `).all(location);
-  }
-  return db.prepare(`
-    SELECT location, purity, rate_per_gram, source, is_override, updated_at
-    FROM gold_rates AS g
-    WHERE id = (
-      SELECT id FROM gold_rates
-      WHERE location = g.location AND purity = g.purity
-      ORDER BY is_override DESC, updated_at DESC, id DESC
-      LIMIT 1
-    )
-    ORDER BY location, purity
-  `).all();
-}
-
-export function getLatestForPurity(purity, location) {
-  return getDatabase().prepare(`
-    SELECT location, purity, rate_per_gram, source, is_override, updated_at
-    FROM gold_rates
-    WHERE purity = ? AND location = ?
-    ORDER BY is_override DESC, updated_at DESC, id DESC
-    LIMIT 1
-  `).get(purity, location);
-}
-
-/** Insert manual override (or "use live" toggle that just clears overrides). */
-export function manualUpsert({ location, purity, rate_per_gram, is_override = 1 }) {
-  if (!location || !purity || !(rate_per_gram > 0)) {
-    const err = new Error('location, purity and rate_per_gram > 0 required');
-    err.status = 400;
-    throw err;
-  }
-  return getDatabase().prepare(`
-    INSERT INTO gold_rates (location, purity, rate_per_gram, source, is_override, effective_date, updated_at)
-    VALUES (?, ?, ?, 'manual', ?, date('now'), datetime('now'))
-  `).run(location, purity, rate_per_gram, is_override ? 1 : 0);
-}
-
-/** "Use live rate" toggle — soft-disables existing overrides for (location, purity). */
-export function clearOverride({ location, purity }) {
+/** "Use live rate" toggle — clears active overrides for (location, purity). */
+export async function clearOverride({ location, purity }) {
   if (!location || !purity) {
     const err = new Error('location and purity required');
     err.status = 400;
     throw err;
   }
-  return getDatabase()
-    .prepare(`UPDATE gold_rates SET is_override = 0 WHERE location = ? AND purity = ? AND is_override = 1`)
-    .run(location, purity);
+  const sql = getDb();
+  await sql`
+    UPDATE gold_rates
+    SET is_override = false
+    WHERE location = ${location} AND purity = ${purity} AND is_override = true
+  `;
 }

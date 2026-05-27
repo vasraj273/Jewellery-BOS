@@ -6,7 +6,7 @@ import { startScheduler } from './services/scheduler.service.js';
 const PORT = process.env.PORT || 5000;
 
 async function bootstrap() {
-  initDatabase();
+  await initDatabase();
   await startScheduler();
   const app = createApp();
   app.listen(PORT, () => {

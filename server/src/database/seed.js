@@ -1,8 +1,5 @@
 import 'dotenv/config';
-import { initDatabase, getDatabase, closeDatabase } from './connection.js';
-
-initDatabase();
-const db = getDatabase();
+import { initDatabase, getDb, closeDatabase } from './connection.js';
 
 const goldRates = [
   { purity: '24Kt', rate_per_gram: 7800 },
@@ -26,33 +23,39 @@ const gemstoneRates = [
 ];
 
 const makingCharges = [
-  { category: 'Ring',     charge_type: 'per_gram',   charge_value: 1200 },
-  { category: 'Necklace', charge_type: 'per_gram',   charge_value: 950  },
-  { category: 'Bangle',   charge_type: 'per_gram',   charge_value: 850  },
-  { category: 'Earring',  charge_type: 'per_gram',   charge_value: 1100 },
-  { category: 'Pendant',  charge_type: 'fixed',      charge_value: 2500 }
+  { category: 'Ring',     charge_type: 'per_gram', charge_value: 1200 },
+  { category: 'Necklace', charge_type: 'per_gram', charge_value: 950  },
+  { category: 'Bangle',   charge_type: 'per_gram', charge_value: 850  },
+  { category: 'Earring',  charge_type: 'per_gram', charge_value: 1100 },
+  { category: 'Pendant',  charge_type: 'fixed',    charge_value: 2500 }
 ];
 
-const insertGold = db.prepare(
-  'INSERT INTO gold_rates (purity, rate_per_gram) VALUES (?, ?)'
-);
-const insertDiamond = db.prepare(
-  'INSERT INTO diamond_rates (shape, clarity, color, rate_per_carat) VALUES (?, ?, ?, ?)'
-);
-const insertGemstone = db.prepare(
-  'INSERT INTO gemstone_rates (gemstone, grade, rate_per_carat) VALUES (?, ?, ?)'
-);
-const insertMaking = db.prepare(
-  'INSERT INTO making_charges (category, charge_type, charge_value) VALUES (?, ?, ?)'
-);
+(async () => {
+  await initDatabase();
+  const sql = getDb();
 
-const seed = db.transaction(() => {
-  for (const r of goldRates)     insertGold.run(r.purity, r.rate_per_gram);
-  for (const r of diamondRates)  insertDiamond.run(r.shape, r.clarity, r.color, r.rate_per_carat);
-  for (const r of gemstoneRates) insertGemstone.run(r.gemstone, r.grade, r.rate_per_carat);
-  for (const r of makingCharges) insertMaking.run(r.category, r.charge_type, r.charge_value);
+  await sql.begin(async (tx) => {
+    for (const r of goldRates) {
+      await tx`INSERT INTO gold_rates (purity, rate_per_gram) VALUES (${r.purity}, ${r.rate_per_gram})`;
+    }
+    for (const r of diamondRates) {
+      await tx`INSERT INTO diamond_rates (shape, clarity, color, rate_per_carat)
+               VALUES (${r.shape}, ${r.clarity}, ${r.color}, ${r.rate_per_carat})`;
+    }
+    for (const r of gemstoneRates) {
+      await tx`INSERT INTO gemstone_rates (gemstone, grade, rate_per_carat)
+               VALUES (${r.gemstone}, ${r.grade}, ${r.rate_per_carat})`;
+    }
+    for (const r of makingCharges) {
+      await tx`INSERT INTO making_charges (category, charge_type, charge_value)
+               VALUES (${r.category}, ${r.charge_type}, ${r.charge_value})`;
+    }
+  });
+
+  console.log('[JBOS] Seed data inserted.');
+  await closeDatabase();
+  process.exit(0);
+})().catch((err) => {
+  console.error('[JBOS] seed failed:', err);
+  process.exit(1);
 });
-
-seed();
-console.log('[JBOS] Seed data inserted.');
-closeDatabase();

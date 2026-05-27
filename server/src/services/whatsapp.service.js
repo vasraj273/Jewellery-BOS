@@ -12,7 +12,7 @@
  * row stamped with status='failed' + error text.
  */
 
-import { getDatabase } from '../database/connection.js';
+import { getDb } from '../database/connection.js';
 import { findByQuoteId } from './quotation.service.js';
 import { renderQuotationHtml } from './template.service.js';
 import { generatePdf } from './pdf.service.js';
@@ -159,18 +159,21 @@ function buildTemplateVars(q) {
   };
 }
 
-function updateStatus(quoteId, fields) {
-  const db = getDatabase();
+async function updateStatus(quoteId, fields) {
+  const sql = getDb();
   const keys = Object.keys(fields);
   if (keys.length === 0) return;
-  const setSql = keys.map((k) => `${k} = @${k}`).join(', ');
-  db.prepare(`UPDATE quotations SET ${setSql}, updated_at = datetime('now') WHERE quote_id = @quote_id`)
-    .run({ ...fields, quote_id: quoteId });
+  // postgres.js `sql(obj, ...cols)` builds the SET fragment safely.
+  await sql`
+    UPDATE quotations
+    SET ${sql(fields, ...keys)}, updated_at = now()
+    WHERE quote_id = ${quoteId}
+  `;
 }
 
 /** Orchestrator: render → upload → send → persist. */
 export async function sendQuotation(quoteId) {
-  const q = findByQuoteId(quoteId);
+  const q = await findByQuoteId(quoteId);
   if (!q) {
     const err = new Error('quotation not found');
     err.status = 404;
@@ -180,11 +183,11 @@ export async function sendQuotation(quoteId) {
   const to = normalizeMobile(q.customer_mobile);
   if (!to) {
     const reason = 'customer mobile missing or invalid';
-    updateStatus(quoteId, { whatsapp_status: 'failed', whatsapp_error: reason });
+    await updateStatus(quoteId, { whatsapp_status: 'failed', whatsapp_error: reason });
     return { ok: false, error: reason };
   }
 
-  updateStatus(quoteId, { whatsapp_status: 'pending', whatsapp_error: null });
+  await updateStatus(quoteId, { whatsapp_status: 'pending', whatsapp_error: null });
 
   try {
     const html = renderQuotationHtml(q);
@@ -204,10 +207,10 @@ export async function sendQuotation(quoteId) {
 
     console.log(`[WhatsApp] Accepted by Meta. message_id=${meta.message_id} wa_id=${meta.wa_id} template=${meta.template}`);
 
-    updateStatus(quoteId, {
+    await updateStatus(quoteId, {
       whatsapp_status: 'sent',
       whatsapp_message_id: meta.message_id,
-      whatsapp_sent_at: new Date().toISOString(),
+      whatsapp_sent_at: new Date(),
       whatsapp_error: null
     });
 
@@ -221,7 +224,7 @@ export async function sendQuotation(quoteId) {
     };
   } catch (err) {
     console.warn(`[WhatsApp] send failed for ${quoteId}: ${err.message}`);
-    updateStatus(quoteId, {
+    await updateStatus(quoteId, {
       whatsapp_status: 'failed',
       whatsapp_error: err.message?.slice(0, 500) || 'unknown error'
     });

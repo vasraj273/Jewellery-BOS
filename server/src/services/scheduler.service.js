@@ -28,7 +28,7 @@ export async function startScheduler() {
   console.log(`[Scheduler] Gold rate cron registered: "${cronExpr}" (${process.env.TZ || 'Asia/Kolkata'})`);
 
   // One-shot refresh on boot if DB has no rates OR last update is stale (>24h).
-  if (isStale()) {
+  if (await isStale()) {
     console.log('[Scheduler] Boot refresh — DB empty or stale');
     await refreshGold();
   }
@@ -38,11 +38,15 @@ export function stopScheduler() {
   if (scheduledTask) { scheduledTask.stop(); scheduledTask = null; }
 }
 
-function isStale() {
-  const rows = getLatest();
+async function isStale() {
+  const rows = await getLatest();
   if (rows.length === 0) return true;
-  const newest = rows.reduce((max, r) => (r.updated_at > max ? r.updated_at : max), '');
+  // postgres returns timestamptz as a Date instance; SQLite returned text.
+  // new Date(x) handles both shapes.
+  const newest = rows.reduce((max, r) => {
+    const t = new Date(r.updated_at).getTime();
+    return Number.isFinite(t) && t > max ? t : max;
+  }, 0);
   if (!newest) return true;
-  const ageMs = Date.now() - new Date(newest.replace(' ', 'T') + 'Z').getTime();
-  return ageMs > 24 * 60 * 60 * 1000;
+  return Date.now() - newest > 24 * 60 * 60 * 1000;
 }

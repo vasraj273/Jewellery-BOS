@@ -1,27 +1,24 @@
-import { getDatabase } from '../database/connection.js';
+import { getDb } from '../database/connection.js';
 import { computePricing } from './pricing.service.js';
 import { generateQuoteId } from '../utils/quoteId.js';
 import { validateQuotation } from '../utils/validate.js';
 
-const SELECT_COLS = '*';
-
-export function listAll() {
-  return getDatabase()
-    .prepare(`SELECT ${SELECT_COLS} FROM quotations ORDER BY created_at DESC`)
-    .all();
+export async function listAll() {
+  const sql = getDb();
+  return sql`SELECT * FROM quotations ORDER BY created_at DESC`;
 }
 
-export function findByQuoteId(quoteId) {
-  return getDatabase()
-    .prepare(`SELECT ${SELECT_COLS} FROM quotations WHERE quote_id = ?`)
-    .get(quoteId);
+export async function findByQuoteId(quoteId) {
+  const sql = getDb();
+  const rows = await sql`SELECT * FROM quotations WHERE quote_id = ${quoteId}`;
+  return rows[0] || null;
 }
 
-export function create(input) {
+export async function create(input) {
   validateQuotation(input);
-  const db = getDatabase();
+  const sql = getDb();
   const pricing = computePricing(input);
-  const quoteId = input.quote_id || generateQuoteId();
+  const quoteId = input.quote_id || (await generateQuoteId());
   const validTill = input.valid_till || defaultValidTill();
 
   const row = {
@@ -83,20 +80,15 @@ export function create(input) {
     notes: input.notes || ''
   };
 
-  const cols = Object.keys(row);
-  const placeholders = cols.map((c) => `@${c}`).join(', ');
-  db.prepare(
-    `INSERT INTO quotations (${cols.join(', ')}) VALUES (${placeholders})`
-  ).run(row);
-
+  // postgres.js helper: sql(obj) expands to (col1, col2, ...) VALUES (val1, val2, ...)
+  await sql`INSERT INTO quotations ${sql(row)}`;
   return findByQuoteId(quoteId);
 }
 
-export function remove(quoteId) {
-  const info = getDatabase()
-    .prepare('DELETE FROM quotations WHERE quote_id = ?')
-    .run(quoteId);
-  return info.changes > 0;
+export async function remove(quoteId) {
+  const sql = getDb();
+  const res = await sql`DELETE FROM quotations WHERE quote_id = ${quoteId}`;
+  return res.count > 0;
 }
 
 function num(v) {
