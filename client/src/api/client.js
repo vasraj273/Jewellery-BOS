@@ -1,7 +1,18 @@
 import axios from 'axios';
 
+/**
+ * Base URL resolution:
+ *   - Vite injects VITE_API_BASE_URL at build time (.env.production / .env.development).
+ *   - Empty / unset → relative '/api' (works in dev via Vite proxy).
+ *   - Set (e.g. https://jbos-api.onrender.com) → absolute calls against deployed backend.
+ *
+ * Trailing slash on VITE_API_BASE_URL is tolerated.
+ */
+const RAW_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+const API_ROOT = `${RAW_BASE}/api`;
+
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_ROOT,
   timeout: 30000
 });
 
@@ -12,8 +23,8 @@ export const quotationsApi = {
   calculate: (payload)          => api.post('/quotations/calculate', payload).then(r => r.data.data),
   previewDraft: (payload)       => api.post('/quotations/preview-draft', payload, { responseType: 'text' }).then(r => r.data),
   remove:    (id)               => api.delete(`/quotations/${id}`).then(r => r.data),
-  previewUrl: (id)              => `/api/quotations/${id}/preview`,
-  pdfUrl:     (id)              => `/api/quotations/${id}/pdf`,
+  previewUrl: (id)              => `${API_ROOT}/quotations/${id}/preview`,
+  pdfUrl:     (id)              => `${API_ROOT}/quotations/${id}/pdf`,
   sendWhatsApp: (id)            => api.post(`/quotations/${id}/whatsapp/send`).then(r => r.data),
   whatsappConfig: ()            => api.get('/quotations/whatsapp/config').then(r => r.data.data)
 };
