@@ -61,6 +61,18 @@ export const ratesApi = {
   making:              () => api.get('/rates/making').then(r => r.data.data)
 };
 
+export const usersApi = {
+  list:          ()             => api.get('/users').then(r => r.data.data),
+  create:        (payload)      => api.post('/users', payload).then(r => r.data.data),
+  update:        (id, payload)  => api.put(`/users/${id}`, payload).then(r => r.data.data),
+  resetPassword: (id, password) => api.put(`/users/${id}/password`, { password }).then(r => r.data),
+  deactivate:    (id)           => api.delete(`/users/${id}`).then(r => r.data.data)
+};
+
+export const auditApi = {
+  recent: (limit = 100) => api.get('/audit', { params: { limit } }).then(r => r.data.data)
+};
+
 export const uploadsApi = {
   image: (file) => {
     const fd = new FormData();

@@ -7,6 +7,8 @@ import authRoutes from './routes/auth.routes.js';
 import quotationRoutes from './routes/quotation.routes.js';
 import ratesRoutes from './routes/rates.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
+import usersRoutes from './routes/users.routes.js';
+import auditRoutes from './routes/audit.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { requireAuth } from './middleware/auth.middleware.js';
 
@@ -34,6 +36,9 @@ export function createApp() {
   app.use('/api/quotations', requireAuth, quotationRoutes);
   app.use('/api/rates',      requireAuth, ratesRoutes);
   app.use('/api/uploads',    requireAuth, uploadRoutes);
+  // Admin-tier endpoints (auth + role gates applied inside the routers).
+  app.use('/api/users',      usersRoutes);
+  app.use('/api/audit',      auditRoutes);
 
   app.use(errorHandler);
 

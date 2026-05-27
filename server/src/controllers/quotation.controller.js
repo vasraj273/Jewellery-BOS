@@ -3,17 +3,18 @@ import { computePricing } from '../services/pricing.service.js';
 import { renderQuotationHtml } from '../services/template.service.js';
 import { generatePdf } from '../services/pdf.service.js';
 import * as whatsapp from '../services/whatsapp.service.js';
+import * as audit from '../services/audit.service.js';
 
 export async function list(req, res, next) {
   try {
-    const rows = await quotationService.listAll();
+    const rows = await quotationService.listAll(req.user);
     res.json({ success: true, data: rows });
   } catch (e) { next(e); }
 }
 
 export async function getOne(req, res, next) {
   try {
-    const row = await quotationService.findByQuoteId(req.params.quoteId);
+    const row = await quotationService.findByQuoteId(req.params.quoteId, req.user);
     if (!row) return res.status(404).json({ success: false, error: 'Not found' });
     res.json({ success: true, data: row });
   } catch (e) { next(e); }
@@ -53,14 +54,20 @@ function defaultValidTill() {
 
 export async function create(req, res, next) {
   try {
-    const saved = await quotationService.create(req.body);
+    const saved = await quotationService.create(req.body, req.user);
+    audit.record({
+      actor: req.user, action: 'quotation.create',
+      entityType: 'quotation', entityId: saved.quote_id,
+      metadata: { final_price: saved.final_price, location: saved.pricing_location },
+      req
+    });
     res.status(201).json({ success: true, data: saved });
   } catch (e) { next(e); }
 }
 
 export async function preview(req, res, next) {
   try {
-    const row = await quotationService.findByQuoteId(req.params.quoteId);
+    const row = await quotationService.findByQuoteId(req.params.quoteId, req.user);
     if (!row) return res.status(404).send('Quotation not found');
     const html = renderQuotationHtml(row);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -70,7 +77,7 @@ export async function preview(req, res, next) {
 
 export async function pdf(req, res, next) {
   try {
-    const row = await quotationService.findByQuoteId(req.params.quoteId);
+    const row = await quotationService.findByQuoteId(req.params.quoteId, req.user);
     if (!row) return res.status(404).json({ success: false, error: 'Not found' });
     const html = renderQuotationHtml(row);
     const buffer = await generatePdf(html);
@@ -82,16 +89,30 @@ export async function pdf(req, res, next) {
 
 export async function remove(req, res, next) {
   try {
-    const ok = await quotationService.remove(req.params.quoteId);
+    const ok = await quotationService.remove(req.params.quoteId, req.user);
     if (!ok) return res.status(404).json({ success: false, error: 'Not found' });
+    audit.record({
+      actor: req.user, action: 'quotation.delete',
+      entityType: 'quotation', entityId: req.params.quoteId, req
+    });
     res.json({ success: true });
   } catch (e) { next(e); }
 }
 
 export async function sendWhatsApp(req, res, next) {
   try {
+    // Scope check first so sales_executive can't trigger WhatsApp on someone else's quote.
+    const target = await quotationService.findByQuoteId(req.params.quoteId, req.user);
+    if (!target) return res.status(404).json({ success: false, error: 'Not found' });
+
     const result = await whatsapp.sendQuotation(req.params.quoteId);
-    const updated = await quotationService.findByQuoteId(req.params.quoteId);
+    const updated = await quotationService.findByQuoteId(req.params.quoteId, req.user);
+    audit.record({
+      actor: req.user, action: 'quotation.whatsapp_send',
+      entityType: 'quotation', entityId: req.params.quoteId,
+      metadata: { ok: result.ok, error: result.error || null },
+      req
+    });
     res.status(result.ok ? 200 : 502).json({ success: result.ok, data: { ...result, quotation: updated } });
   } catch (e) { next(e); }
 }

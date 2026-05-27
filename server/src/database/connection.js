@@ -114,6 +114,19 @@ async function runMigrations(tx) {
   if (!qCols.includes('whatsapp_sent_at'))    await tx.unsafe(`ALTER TABLE quotations ADD COLUMN whatsapp_sent_at timestamptz`);
   if (!qCols.includes('whatsapp_error'))      await tx.unsafe(`ALTER TABLE quotations ADD COLUMN whatsapp_error text`);
 
+  // M2 — RBAC ownership
+  if (!qCols.includes('owner_user_id')) {
+    await tx.unsafe(`ALTER TABLE quotations ADD COLUMN owner_user_id bigint REFERENCES users(id) ON DELETE SET NULL`);
+    // Backfill: any pre-existing quotation rows get assigned to the first
+    // super_admin so they remain visible to admins after the gate flips on.
+    await tx.unsafe(`
+      UPDATE quotations
+      SET owner_user_id = (SELECT id FROM users WHERE role = 'super_admin' ORDER BY id ASC LIMIT 1)
+      WHERE owner_user_id IS NULL
+    `);
+  }
+  await tx.unsafe(`CREATE INDEX IF NOT EXISTS idx_quotations_owner ON quotations(owner_user_id)`);
+
   // Drop legacy SQLite-era index name if it still exists from a prior environment.
   await tx.unsafe(`DROP INDEX IF EXISTS idx_gold_rates_purity`);
   await tx.unsafe(`CREATE INDEX IF NOT EXISTS idx_gold_rates_loc_purity ON gold_rates(location, purity, updated_at DESC)`);

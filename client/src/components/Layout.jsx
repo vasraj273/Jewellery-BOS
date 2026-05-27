@@ -2,11 +2,22 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 
-const navItems = [
+const BASE_NAV = [
   { to: '/dashboard',        label: 'Dashboard' },
   { to: '/quotations/new',   label: 'Create Quotation' },
   { to: '/quotations',       label: 'Quotation History' }
 ];
+
+const ADMIN_NAV = [
+  { to: '/admin/users',      label: 'Users', roles: ['super_admin', 'admin'] }
+];
+
+function navFor(role) {
+  return [
+    ...BASE_NAV,
+    ...ADMIN_NAV.filter((item) => !item.roles || item.roles.includes(role))
+  ];
+}
 
 export default function Layout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -34,7 +45,7 @@ export default function Layout() {
       {/* ─── Desktop sidebar (lg+) ─── */}
       <aside className="hidden lg:flex w-64 bg-ink text-white flex-col border-r border-gold/30 shrink-0">
         <SidebarBrand />
-        <Nav className="px-4 py-6 space-y-1 flex-1" />
+        <Nav items={navFor(user?.role)} className="px-4 py-6 space-y-1 flex-1" />
         <SidebarFooter user={user} onLogout={handleLogout} />
       </aside>
 
@@ -74,7 +85,7 @@ export default function Layout() {
             <CloseIcon />
           </button>
         </div>
-        <Nav className="px-4 py-4 space-y-1 flex-1" onItemClick={() => setDrawerOpen(false)} />
+        <Nav items={navFor(user?.role)} className="px-4 py-4 space-y-1 flex-1" onItemClick={() => setDrawerOpen(false)} />
         <SidebarFooter user={user} onLogout={handleLogout} />
       </aside>
 
@@ -129,10 +140,10 @@ function prettyRole(role) {
   return role.replace(/_/g, ' ');
 }
 
-function Nav({ className = '', onItemClick }) {
+function Nav({ items = [], className = '', onItemClick }) {
   return (
     <nav className={className}>
-      {navItems.map((item) => (
+      {items.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
