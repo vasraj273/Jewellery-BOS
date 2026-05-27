@@ -7,7 +7,7 @@ import * as audit from '../services/audit.service.js';
 
 export async function list(req, res, next) {
   try {
-    const rows = await quotationService.listAll(req.user);
+    const rows = await quotationService.listAll(req.user, req.query || {});
     res.json({ success: true, data: rows });
   } catch (e) { next(e); }
 }

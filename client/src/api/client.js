@@ -35,7 +35,7 @@ api.interceptors.response.use(
 );
 
 export const quotationsApi = {
-  list:      ()                 => api.get('/quotations').then(r => r.data.data),
+  list:      (params = {})      => api.get('/quotations', { params }).then(r => r.data.data),
   get:       (id)               => api.get(`/quotations/${id}`).then(r => r.data.data),
   create:    (payload)          => api.post('/quotations', payload).then(r => r.data.data),
   calculate: (payload)          => api.post('/quotations/calculate', payload).then(r => r.data.data),

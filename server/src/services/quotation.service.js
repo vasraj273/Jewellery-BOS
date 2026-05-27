@@ -14,16 +14,103 @@ import { validateQuotation } from '../utils/validate.js';
 function scopeFor(actor) {
   if (!actor) return null;
   if (actor.role === 'super_admin' || actor.role === 'admin') return null;
-  return actor.id; // sales_executive
+  return Number(actor.id); // sales_executive
 }
 
-export async function listAll(actor) {
+const SORT_MAP = {
+  newest:        'created_at DESC',
+  oldest:        'created_at ASC',
+  price_desc:    'final_price DESC NULLS LAST',
+  price_asc:     'final_price ASC NULLS LAST',
+  customer_asc:  'lower(customer_name) ASC',
+  customer_desc: 'lower(customer_name) DESC'
+};
+
+/**
+ * List quotations with optional admin-controlled filters.
+ *   filters = {
+ *     sales_exec  : number          — only honoured for admin/super_admin
+ *     date_from   : 'YYYY-MM-DD'    — inclusive lower bound on created_at
+ *     date_to     : 'YYYY-MM-DD'    — exclusive upper bound (one day after)
+ *     product     : string          — product_category exact match
+ *     status      : string          — quotation status exact match
+ *     search      : string          — partial ILIKE across customer_name / mobile / email / quote_id
+ *     min_price   : number          — final_price >=
+ *     max_price   : number          — final_price <=
+ *     sort        : key from SORT_MAP (default newest)
+ *     limit       : number          — default 500
+ *     offset      : number          — default 0
+ *   }
+ *
+ * Sales-executive scope is *always* applied last and cannot be overridden by
+ * a sales_exec filter from a sales-exec actor.
+ */
+export async function listAll(actor, filters = {}) {
   const sql = getDb();
-  const ownerId = scopeFor(actor);
-  if (ownerId == null) {
-    return sql`SELECT * FROM quotations ORDER BY created_at DESC`;
-  }
-  return sql`SELECT * FROM quotations WHERE owner_user_id = ${ownerId} ORDER BY created_at DESC`;
+
+  const scopedOwner = scopeFor(actor);
+  const adminOwnerFilter =
+    scopedOwner == null && filters.sales_exec != null && filters.sales_exec !== ''
+      ? Number(filters.sales_exec)
+      : null;
+
+  const ownerClause = scopedOwner != null
+    ? sql`AND owner_user_id = ${scopedOwner}`
+    : (adminOwnerFilter != null ? sql`AND owner_user_id = ${adminOwnerFilter}` : sql``);
+
+  const dateFromClause = filters.date_from
+    ? sql`AND created_at >= ${filters.date_from}::date`
+    : sql``;
+  const dateToClause = filters.date_to
+    // inclusive end: use < (date + 1 day) to capture the whole end day
+    ? sql`AND created_at < (${filters.date_to}::date + INTERVAL '1 day')`
+    : sql``;
+
+  const productClause = filters.product
+    ? sql`AND product_category = ${filters.product}`
+    : sql``;
+
+  const statusClause = filters.status
+    ? sql`AND status = ${filters.status}`
+    : sql``;
+
+  const search = (filters.search || '').trim();
+  const searchClause = search
+    ? sql`AND (
+        customer_name   ILIKE ${'%' + search + '%'} OR
+        customer_mobile ILIKE ${'%' + search + '%'} OR
+        customer_email  ILIKE ${'%' + search + '%'} OR
+        quote_id        ILIKE ${'%' + search + '%'}
+      )`
+    : sql``;
+
+  const minPriceClause = filters.min_price != null && filters.min_price !== ''
+    ? sql`AND final_price >= ${Number(filters.min_price) || 0}`
+    : sql``;
+  const maxPriceClause = filters.max_price != null && filters.max_price !== ''
+    ? sql`AND final_price <= ${Number(filters.max_price) || 0}`
+    : sql``;
+
+  const sortKey   = SORT_MAP[filters.sort] ? filters.sort : 'newest';
+  const orderBy   = SORT_MAP[sortKey];
+  const limit     = Math.min(Math.max(parseInt(filters.limit, 10)  || 500, 1), 1000);
+  const offset    = Math.max(parseInt(filters.offset, 10) || 0, 0);
+
+  return sql`
+    SELECT *
+    FROM quotations
+    WHERE 1 = 1
+    ${ownerClause}
+    ${dateFromClause}
+    ${dateToClause}
+    ${productClause}
+    ${statusClause}
+    ${searchClause}
+    ${minPriceClause}
+    ${maxPriceClause}
+    ORDER BY ${sql.unsafe(orderBy)}
+    LIMIT ${limit} OFFSET ${offset}
+  `;
 }
 
 export async function findByQuoteId(quoteId, actor) {
