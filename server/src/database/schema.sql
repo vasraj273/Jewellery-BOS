@@ -119,7 +119,8 @@ CREATE TABLE IF NOT EXISTS quotations (
   created_at          timestamptz NOT NULL DEFAULT now(),
   updated_at          timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS idx_quotations_owner ON quotations(owner_user_id);
+-- idx_quotations_owner is created in connection.js after the column migration
+-- runs, so existing databases get the column added before the index references it.
 
 CREATE INDEX IF NOT EXISTS idx_quotations_quote_id   ON quotations(quote_id);
 CREATE INDEX IF NOT EXISTS idx_quotations_created_at ON quotations(created_at DESC);
