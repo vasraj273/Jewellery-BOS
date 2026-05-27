@@ -6,7 +6,14 @@ async function getBrowser() {
   if (!browserPromise) {
     browserPromise = puppeteer.launch({
       headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      // Sandbox flags required on Render / most container hosts.
+      // disable-dev-shm-usage avoids crashes on hosts with a tiny /dev/shm.
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+      ]
     });
   }
   return browserPromise;
