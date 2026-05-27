@@ -32,12 +32,22 @@ function applyAuthHeader(token) {
   }
 }
 
+// Apply the stored header synchronously at module-eval time so axios is ready
+// before AuthProvider's first effect fires. Prevents a window where the first
+// authenticated request goes out with no header, gets 401, and bounces the
+// user back to /login mid-flow (post-logout re-login race).
+{
+  const initial = readStored();
+  applyAuthHeader(initial?.token || null);
+}
+
 export function AuthProvider({ children }) {
   const stored = readStored();
   const [user, setUser]     = useState(stored?.user || null);
   const [token, setToken]   = useState(stored?.token || null);
   const [loading, setLoading] = useState(false);
 
+  // Safety net: keep header in sync if token changes between renders.
   useEffect(() => { applyAuthHeader(token); }, [token]);
 
   // Global 401 handler from axios interceptor → forced logout.
@@ -56,6 +66,11 @@ export function AuthProvider({ children }) {
     try {
       const res = await api.post('/auth/login', { email, password });
       const { user: u, token: t } = res.data.data;
+      // Order matters: set the axios header BEFORE persisting/state-updating,
+      // so any request that fires during the post-login re-render already
+      // carries the Bearer token. Without this we hit a state-vs-effect race
+      // on re-login after a logout and bounce back to /login on the first 401.
+      applyAuthHeader(t);
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: u, token: t }));
       setUser(u);
       setToken(t);
@@ -66,6 +81,9 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
+    // Strip header synchronously so anything that races during navigation
+    // doesn't fire off the old token (causing a 401 + unauthorized bounce).
+    applyAuthHeader(null);
     try { await api.post('/auth/logout'); } catch { /* ignore — stateless */ }
     localStorage.removeItem(STORAGE_KEY);
     setUser(null);

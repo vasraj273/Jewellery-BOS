@@ -46,9 +46,42 @@ export async function create(input, actor) {
   const quoteId = input.quote_id || (await generateQuoteId());
   const validTill = input.valid_till || defaultValidTill();
 
+  // ── Ownership enforcement ──────────────────────────────
+  // Default: owner = actor. Sales executives can never assign to another
+  // user. Admin / super_admin may pass owner_user_id explicitly; we
+  // validate the target is active before honouring it.
+  let ownerId = actor?.id ?? null;
+  let ownerName = null;
+  const requestedOwner = input.owner_user_id != null && input.owner_user_id !== ''
+    ? Number(input.owner_user_id)
+    : null;
+
+  if (requestedOwner && requestedOwner !== actor?.id) {
+    if (actor?.role !== 'super_admin' && actor?.role !== 'admin') {
+      const err = new Error('You cannot assign a quotation to another user');
+      err.status = 403; throw err;
+    }
+    const [target] = await sql`
+      SELECT id, full_name FROM users WHERE id = ${requestedOwner} AND is_active = true LIMIT 1
+    `;
+    if (!target) {
+      const err = new Error('Owner user not found or inactive');
+      err.status = 400; throw err;
+    }
+    ownerId   = target.id;
+    ownerName = target.full_name;
+  }
+
+  // Auto-fill the printed "Sales Executive" label from the resolved owner
+  // when caller didn't supply one (sales_exec always falls through here).
+  const salesExecLabel = (input.sales_executive && String(input.sales_executive).trim())
+    || ownerName
+    || actor?.full_name
+    || '';
+
   const row = {
     quote_id: quoteId,
-    owner_user_id: actor?.id ?? null,
+    owner_user_id: ownerId,
     status: input.status || 'draft',
 
     customer_name: input.customer_name || '',
@@ -101,7 +134,7 @@ export async function create(input, actor) {
     final_price: pricing.final_price,
 
     pricing_location: input.pricing_location || 'Mumbai',
-    sales_executive: input.sales_executive || '',
+    sales_executive: salesExecLabel,
     valid_till: validTill,
     notes: input.notes || ''
   };

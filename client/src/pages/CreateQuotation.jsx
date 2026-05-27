@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { quotationsApi, ratesApi } from '../api/client.js';
+import { quotationsApi, ratesApi, usersApi } from '../api/client.js';
+import { useAuth } from '../auth/AuthContext.jsx';
 import GoldRateWidget from '../components/GoldRateWidget.jsx';
+
+const ADMIN_ROLES = ['super_admin', 'admin'];
 
 const INITIAL = {
   pricing_location: 'Mumbai',
@@ -16,7 +19,7 @@ const INITIAL = {
   gold_rate_per_gram: 5850, diamond_rate_per_carat: 85000, gemstone_rate_per_carat: 0,
   making_charge_type: 'per_gram', making_charge_value: 1200,
   hallmark_charge: 250, certification_charge: 0, shipping_charge: 500,
-  sales_executive: '', notes: ''
+  owner_user_id: null, sales_executive: '', notes: ''
 };
 
 // Mirror of server pricing.service.js — runs client-side for instant feedback.
@@ -67,13 +70,40 @@ function validate(form) {
 }
 
 export default function CreateQuotation() {
-  const [form, setForm] = useState(INITIAL);
+  const { user: me } = useAuth();
+  const isAdminTier  = !!me && ADMIN_ROLES.includes(me.role);
+
+  const [form, setForm] = useState(() => ({
+    ...INITIAL,
+    owner_user_id: me?.id ?? null,
+    sales_executive: me?.full_name || ''
+  }));
   const [touched, setTouched] = useState({});
   const [saving, setSaving] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
   const [serverError, setServerError] = useState('');
   const [liveRates, setLiveRates] = useState({});  // { '18Kt': 5800, ... }
+  const [assignees, setAssignees] = useState([]);   // admin tier only
   const navigate = useNavigate();
+
+  // Admin tier can re-assign the owner; load active users for the dropdown.
+  useEffect(() => {
+    if (!isAdminTier) return;
+    usersApi.list()
+      .then((rows) => setAssignees(rows.filter((u) => u.is_active)))
+      .catch(() => setAssignees([]));
+  }, [isAdminTier]);
+
+  function pickOwner(idStr) {
+    const id = Number(idStr);
+    const u = assignees.find((x) => x.id === id);
+    setForm((f) => ({
+      ...f,
+      owner_user_id: id,
+      sales_executive: u?.full_name || f.sales_executive
+    }));
+    setTouched((t) => ({ ...t, owner_user_id: true }));
+  }
 
   const pricing = useMemo(() => computePricing(form), [form]);
   const errors  = useMemo(() => validate(form), [form]);
@@ -237,9 +267,41 @@ export default function CreateQuotation() {
               <Field label="Shipping Charge (₹)" error={errOf('shipping_charge')}>
                 <input className={inputCls(errOf('shipping_charge'))} type="number" min="0" value={form.shipping_charge} onChange={(e) => update('shipping_charge', +e.target.value)} />
               </Field>
-              <Field label="Sales Executive">
-                <input className="input" value={form.sales_executive} onChange={(e) => update('sales_executive', e.target.value)} />
-              </Field>
+              {isAdminTier ? (
+                <Field label="Quotation Owner">
+                  <select
+                    className="input"
+                    value={form.owner_user_id ?? ''}
+                    onChange={(e) => pickOwner(e.target.value)}
+                  >
+                    {/* Always include the actor as a fallback option in case the
+                        users list is still loading. */}
+                    {me && !assignees.some((u) => u.id === me.id) && (
+                      <option value={me.id}>{me.full_name} (you)</option>
+                    )}
+                    {assignees.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.full_name}{u.id === me?.id ? ' (you)' : ''} · {u.role.replace('_', ' ')}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="text-[10px] text-ink-muted mt-1">
+                    Picks who is accountable for this quotation. Also printed as the Sales Executive on the PDF.
+                  </div>
+                </Field>
+              ) : (
+                <Field label="Sales Executive">
+                  <input
+                    className="input bg-off-white cursor-not-allowed"
+                    value={me?.full_name || ''}
+                    readOnly
+                    disabled
+                  />
+                  <div className="text-[10px] text-ink-muted mt-1">
+                    Locked to you — quotations are recorded under the signed-in executive.
+                  </div>
+                </Field>
+              )}
             </Grid>
           </Section>
 

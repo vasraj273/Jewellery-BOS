@@ -17,13 +17,17 @@ export const api = axios.create({
 });
 
 // Auth token is injected by AuthContext via api.defaults.headers.common.Authorization.
-// On any 401, broadcast so AuthContext can clear state and RequireAuth bounces to /login.
+// On any 401 from a request that actually carried a token, broadcast so
+// AuthContext can clear state. Requests sent before the header is set should
+// NOT trigger a forced logout — that would bounce the user mid-login.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error?.response?.status;
     const url = error?.config?.url || '';
-    if (status === 401 && !url.includes('/auth/login')) {
+    const hadToken =
+      !!(error?.config?.headers?.Authorization || error?.config?.headers?.authorization);
+    if (status === 401 && hadToken && !url.includes('/auth/login')) {
       try { window.dispatchEvent(new Event('jbos:unauthorized')); } catch { /* ssr safety */ }
     }
     return Promise.reject(error);
