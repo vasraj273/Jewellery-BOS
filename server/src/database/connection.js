@@ -50,7 +50,44 @@ export async function initDatabase() {
   });
 
   console.log('[JBOS] Postgres ready');
+  await autoBootstrapAdmin();
   return sql;
+}
+
+/**
+ * If the users table is empty and SEED_ADMIN_* env vars are set, create the
+ * initial super_admin and clear any pre-existing demo quotations. Idempotent:
+ * does nothing once any user exists.
+ */
+async function autoBootstrapAdmin() {
+  const email    = process.env.SEED_ADMIN_EMAIL;
+  const password = process.env.SEED_ADMIN_PASSWORD;
+  if (!email || !password) return;
+
+  const [{ count }] = await sql`SELECT count(*)::int AS count FROM users`;
+  if (count > 0) return;
+
+  if (password.length < 8) {
+    console.warn('[JBOS] SEED_ADMIN_PASSWORD too short (<8 chars). Skipping auto-bootstrap.');
+    return;
+  }
+
+  // Lazy import to avoid a circular dependency at module-load time.
+  const { hashPassword } = await import('../services/auth.service.js');
+  const name = process.env.SEED_ADMIN_NAME || 'Super Admin';
+  const hash = await hashPassword(password);
+
+  await sql.begin(async (tx) => {
+    await tx`
+      INSERT INTO users (full_name, email, password_hash, role, is_active)
+      VALUES (${name}, ${email}, ${hash}, 'super_admin', true)
+    `;
+    const wiped = await tx`DELETE FROM quotations`;
+    if (wiped.count > 0) {
+      console.log(`[JBOS] Auto-bootstrap cleared ${wiped.count} demo quotation row(s).`);
+    }
+  });
+  console.log(`[JBOS] Auto-bootstrap created super_admin "${email}".`);
 }
 
 /** Idempotent additions for already-deployed databases. */

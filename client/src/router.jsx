@@ -4,11 +4,14 @@ import Dashboard from './pages/Dashboard.jsx';
 import CreateQuotation from './pages/CreateQuotation.jsx';
 import QuotationHistory from './pages/QuotationHistory.jsx';
 import QuotationPreview from './pages/QuotationPreview.jsx';
+import Login from './pages/Login.jsx';
+import RequireAuth from './auth/RequireAuth.jsx';
 
 export const router = createBrowserRouter([
+  { path: '/login', element: <Login /> },
   {
     path: '/',
-    element: <Layout />,
+    element: <RequireAuth><Layout /></RequireAuth>,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard',                element: <Dashboard /> },

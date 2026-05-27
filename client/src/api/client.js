@@ -16,6 +16,20 @@ export const api = axios.create({
   timeout: 30000
 });
 
+// Auth token is injected by AuthContext via api.defaults.headers.common.Authorization.
+// On any 401, broadcast so AuthContext can clear state and RequireAuth bounces to /login.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const url = error?.config?.url || '';
+    if (status === 401 && !url.includes('/auth/login')) {
+      try { window.dispatchEvent(new Event('jbos:unauthorized')); } catch { /* ssr safety */ }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const quotationsApi = {
   list:      ()                 => api.get('/quotations').then(r => r.data.data),
   get:       (id)               => api.get(`/quotations/${id}`).then(r => r.data.data),

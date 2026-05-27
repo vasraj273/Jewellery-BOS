@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext.jsx';
 
 const navItems = [
   { to: '/dashboard',        label: 'Dashboard' },
@@ -10,6 +11,13 @@ const navItems = [
 export default function Layout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  async function handleLogout() {
+    await logout();
+    navigate('/login', { replace: true });
+  }
 
   // Auto-close drawer on route change
   useEffect(() => { setDrawerOpen(false); }, [location.pathname]);
@@ -26,8 +34,8 @@ export default function Layout() {
       {/* ─── Desktop sidebar (lg+) ─── */}
       <aside className="hidden lg:flex w-64 bg-ink text-white flex-col border-r border-gold/30 shrink-0">
         <SidebarBrand />
-        <Nav className="px-4 py-6 space-y-1" />
-        <SidebarFooter />
+        <Nav className="px-4 py-6 space-y-1 flex-1" />
+        <SidebarFooter user={user} onLogout={handleLogout} />
       </aside>
 
       {/* ─── Mobile top bar (< lg) ─── */}
@@ -67,7 +75,7 @@ export default function Layout() {
           </button>
         </div>
         <Nav className="px-4 py-4 space-y-1 flex-1" onItemClick={() => setDrawerOpen(false)} />
-        <SidebarFooter />
+        <SidebarFooter user={user} onLogout={handleLogout} />
       </aside>
 
       {/* ─── Main ─── */}
@@ -91,12 +99,34 @@ function SidebarBrand() {
   );
 }
 
-function SidebarFooter() {
+function SidebarFooter({ user, onLogout }) {
   return (
-    <div className="px-6 py-4 border-t border-gold/30 text-[10px] tracking-[1.5px] text-gold-light/50 uppercase">
-      v1.0 · Quotation Module
+    <div className="px-6 py-4 border-t border-gold/30 space-y-3">
+      {user && (
+        <div className="space-y-1">
+          <div className="text-[9px] tracking-[2px] uppercase text-gold-light/50">Signed in as</div>
+          <div className="text-sm text-white truncate">{user.full_name || user.email}</div>
+          <div className="text-[10px] tracking-[1.5px] uppercase text-gold/80">{prettyRole(user.role)}</div>
+        </div>
+      )}
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[9px] tracking-[1.5px] uppercase text-gold-light/40">v1.0</span>
+        {user && (
+          <button
+            onClick={onLogout}
+            className="text-[10px] tracking-[2px] uppercase text-gold hover:text-gold-light"
+          >
+            Sign out
+          </button>
+        )}
+      </div>
     </div>
   );
+}
+
+function prettyRole(role) {
+  if (!role) return '';
+  return role.replace(/_/g, ' ');
 }
 
 function Nav({ className = '', onItemClick }) {
