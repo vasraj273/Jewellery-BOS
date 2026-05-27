@@ -9,7 +9,10 @@ const BASE_NAV = [
 ];
 
 const ADMIN_NAV = [
-  { to: '/admin/users',      label: 'Users', roles: ['super_admin', 'admin'] }
+  { to: '/admin/users',      label: 'Users',       roles: ['super_admin', 'admin'] },
+  { to: '/admin/settings',   label: 'Settings',    roles: ['super_admin', 'admin'] },
+  { to: '/admin/masters',    label: 'Masters',     roles: ['super_admin', 'admin'] },
+  { to: '/admin/gold-rates', label: 'Gold Rates',  roles: ['super_admin', 'admin'] }
 ];
 
 function navFor(role) {

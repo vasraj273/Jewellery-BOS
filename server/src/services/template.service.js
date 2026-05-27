@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { formatINR, formatDate } from '../utils/format.js';
+import * as settings from './settings.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,19 +19,21 @@ function loadTemplate() {
 
 /**
  * Render the master quotation template with a quotation row.
- * Replaces {{placeholder}} tokens.
+ * Replaces {{placeholder}} tokens. Company identity is read from
+ * company_settings (in-process cached); env fallbacks removed in M3.
  */
-export function renderQuotationHtml(q) {
+export async function renderQuotationHtml(q) {
   const tpl = loadTemplate();
+  const cs = (await settings.get()) || {};
 
   const placeholders = {
-    // company defaults (can be overridden via env later)
-    company_name:    process.env.COMPANY_NAME    || 'Aurum Atelier',
-    company_tagline: process.env.COMPANY_TAGLINE || 'Fine Custom Jewellery · Est. 2008',
-    company_address: process.env.COMPANY_ADDRESS || '14, Jewellers Row, Zaveri Bazaar<br>Mumbai — 400 002, Maharashtra, India',
-    company_contact: process.env.COMPANY_CONTACT || '+91 98200 XXXXX · atelier@aurum.in',
-    company_web:     process.env.COMPANY_WEB     || 'www.aurumatelier.com · @aurum_atelier',
-    company_gstin:   process.env.COMPANY_GSTIN   || 'GSTIN: 27AAXCA1234R1Z5',
+    // Company identity — DB-driven via company_settings (M3).
+    company_name:    cs.company_name    || 'JBOS',
+    company_tagline: cs.company_tagline || '',
+    company_address: cs.company_address || '',
+    company_contact: cs.company_contact || '',
+    company_web:     cs.company_web     || '',
+    company_gstin:   cs.company_gstin   || '',
 
     // quotation meta
     quote_id:        q.quote_id || '',

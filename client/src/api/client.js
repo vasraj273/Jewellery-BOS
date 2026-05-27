@@ -77,6 +77,20 @@ export const auditApi = {
   recent: (limit = 100) => api.get('/audit', { params: { limit } }).then(r => r.data.data)
 };
 
+export const settingsApi = {
+  get:    ()        => api.get('/settings').then(r => r.data.data),
+  update: (patch)   => api.put('/settings', patch).then(r => r.data.data)
+};
+
+export const mastersApi = {
+  // type ∈ product_categories | metal_types | purities | diamond_types | cities | making_presets
+  list:        (type, { all = false } = {}) =>
+    api.get(`/masters/${type}`, { params: all ? { all: 1 } : {} }).then(r => r.data.data),
+  create:      (type, payload)     => api.post(`/masters/${type}`, payload).then(r => r.data.data),
+  update:      (type, id, payload) => api.put(`/masters/${type}/${id}`, payload).then(r => r.data.data),
+  deactivate:  (type, id)          => api.delete(`/masters/${type}/${id}`).then(r => r.data.data)
+};
+
 export const uploadsApi = {
   image: (file) => {
     const fd = new FormData();

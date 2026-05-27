@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { quotationsApi, ratesApi, usersApi } from '../api/client.js';
+import { quotationsApi, ratesApi, usersApi, mastersApi } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import GoldRateWidget from '../components/GoldRateWidget.jsx';
 
 const ADMIN_ROLES = ['super_admin', 'admin'];
+
+// Fallback dropdowns in case the masters API hasn't responded yet.
+const FALLBACK = {
+  product_categories: ['Ring', 'Necklace', 'Bangle', 'Earring', 'Pendant', 'Bracelet'],
+  metal_types:        ['Gold', 'Platinum', 'Silver'],
+  purities:           ['24Kt', '22Kt', '18Kt', '14Kt'],
+  diamond_types:      ['None', 'Natural', 'Lab-Grown']
+};
 
 const INITIAL = {
   pricing_location: 'Mumbai',
@@ -84,7 +92,38 @@ export default function CreateQuotation() {
   const [serverError, setServerError] = useState('');
   const [liveRates, setLiveRates] = useState({});  // { '18Kt': 5800, ... }
   const [assignees, setAssignees] = useState([]);   // admin tier only
+  const [masters, setMasters] = useState({
+    product_categories: FALLBACK.product_categories,
+    metal_types:        FALLBACK.metal_types,
+    purities:           FALLBACK.purities,
+    diamond_types:      FALLBACK.diamond_types,
+    making_presets:     []
+  });
   const navigate = useNavigate();
+
+  // Pull dropdowns from the masters API so admins can edit them without code.
+  useEffect(() => {
+    const fetchType = (type, fallback) =>
+      mastersApi.list(type)
+        .then((rows) => rows.map((r) => r.label).filter(Boolean))
+        .then((labels) => labels.length ? labels : fallback)
+        .catch(() => fallback);
+    Promise.all([
+      fetchType('product_categories', FALLBACK.product_categories),
+      fetchType('metal_types',        FALLBACK.metal_types),
+      fetchType('purities',           FALLBACK.purities),
+      fetchType('diamond_types',      FALLBACK.diamond_types),
+      mastersApi.list('making_presets').catch(() => [])
+    ]).then(([pc, mt, pu, dt, presets]) => {
+      setMasters({
+        product_categories: pc,
+        metal_types:        mt,
+        purities:           pu,
+        diamond_types:      dt,
+        making_presets:     presets
+      });
+    });
+  }, []);
 
   // Admin tier can re-assign the owner; load active users for the dropdown.
   useEffect(() => {
@@ -192,12 +231,12 @@ export default function CreateQuotation() {
               <Field label="Product Name"><input className="input" value={form.product_name} onChange={(e) => update('product_name', e.target.value)} /></Field>
               <Field label="Product Category *" error={errOf('product_category')}>
                 <select className={inputCls(errOf('product_category'))} value={form.product_category} onChange={(e) => update('product_category', e.target.value)}>
-                  {['Ring','Necklace','Bangle','Earring','Pendant','Bracelet'].map((c) => <option key={c}>{c}</option>)}
+                  {masters.product_categories.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </Field>
               <Field label="Metal Type">
                 <select className="input" value={form.metal_type} onChange={(e) => update('metal_type', e.target.value)}>
-                  {['Gold','Platinum','Silver'].map((c) => <option key={c}>{c}</option>)}
+                  {masters.metal_types.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </Field>
               <Field label="Metal Color">
@@ -207,7 +246,7 @@ export default function CreateQuotation() {
               </Field>
               <Field label="Purity *" error={errOf('purity')}>
                 <select className={inputCls(errOf('purity'))} value={form.purity} onChange={(e) => update('purity', e.target.value)}>
-                  {['24Kt','22Kt','18Kt','14Kt'].map((c) => <option key={c}>{c}</option>)}
+                  {masters.purities.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </Field>
               <Field label="Gross Weight (gm)" error={errOf('gross_weight')}>
@@ -218,7 +257,7 @@ export default function CreateQuotation() {
               </Field>
               <Field label="Diamond Type">
                 <select className="input" value={form.diamond_type} onChange={(e) => update('diamond_type', e.target.value)}>
-                  {['None','Natural','Lab-Grown'].map((c) => <option key={c}>{c}</option>)}
+                  {masters.diamond_types.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </Field>
               <Field label="Diamond Shape"><input className="input" value={form.diamond_shape} onChange={(e) => update('diamond_shape', e.target.value)} /></Field>

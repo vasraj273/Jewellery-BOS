@@ -51,7 +51,71 @@ export async function initDatabase() {
 
   console.log('[JBOS] Postgres ready');
   await autoBootstrapAdmin();
+  await autoSeedMasters();
   return sql;
+}
+
+/**
+ * Seed the single-row company_settings + master catalogs if empty. Idempotent:
+ * any subsequent boot finds rows already present and exits.
+ */
+async function autoSeedMasters() {
+  // company_settings: ensure the singleton row exists.
+  await sql`INSERT INTO company_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING`;
+
+  const seedIfEmpty = async (table, rows) => {
+    const [{ count }] = await sql.unsafe(`SELECT count(*)::int AS count FROM ${table}`);
+    if (count > 0) return;
+    for (const r of rows) {
+      await sql.unsafe(
+        `INSERT INTO ${table} (label, sort_order, extra) VALUES ($1, $2, $3)`,
+        [r.label, r.sort_order ?? 100, JSON.stringify(r.extra || {})]
+      );
+    }
+    console.log(`[JBOS] Seeded ${rows.length} rows into ${table}.`);
+  };
+
+  await seedIfEmpty('master_product_categories', [
+    { label: 'Ring',     sort_order: 10 },
+    { label: 'Necklace', sort_order: 20 },
+    { label: 'Bangle',   sort_order: 30 },
+    { label: 'Earring',  sort_order: 40 },
+    { label: 'Pendant',  sort_order: 50 },
+    { label: 'Bracelet', sort_order: 60 }
+  ]);
+  await seedIfEmpty('master_metal_types', [
+    { label: 'Gold',     sort_order: 10 },
+    { label: 'Platinum', sort_order: 20 },
+    { label: 'Silver',   sort_order: 30 }
+  ]);
+  await seedIfEmpty('master_purities', [
+    { label: '24Kt', sort_order: 10 },
+    { label: '22Kt', sort_order: 20 },
+    { label: '18Kt', sort_order: 30 },
+    { label: '14Kt', sort_order: 40 }
+  ]);
+  await seedIfEmpty('master_diamond_types', [
+    { label: 'None',      sort_order: 10 },
+    { label: 'Natural',   sort_order: 20 },
+    { label: 'Lab-Grown', sort_order: 30 }
+  ]);
+  await seedIfEmpty('master_cities', [
+    { label: 'Mumbai',    sort_order: 10 },
+    { label: 'Ahmedabad', sort_order: 20 },
+    { label: 'Delhi',     sort_order: 30 },
+    { label: 'Bengaluru', sort_order: 40 },
+    { label: 'Chennai',   sort_order: 50 },
+    { label: 'Kolkata',   sort_order: 60 },
+    { label: 'Hyderabad', sort_order: 70 },
+    { label: 'Jaipur',    sort_order: 80 }
+  ]);
+  await seedIfEmpty('master_making_presets', [
+    { label: 'Ring · ₹1200/gm',     sort_order: 10, extra: { charge_type: 'per_gram', charge_value: 1200 } },
+    { label: 'Necklace · ₹950/gm',  sort_order: 20, extra: { charge_type: 'per_gram', charge_value: 950 } },
+    { label: 'Bangle · ₹850/gm',    sort_order: 30, extra: { charge_type: 'per_gram', charge_value: 850 } },
+    { label: 'Earring · ₹1100/gm',  sort_order: 40, extra: { charge_type: 'per_gram', charge_value: 1100 } },
+    { label: 'Pendant · ₹2500 flat',sort_order: 50, extra: { charge_type: 'fixed',    charge_value: 2500 } }
+  ]);
 }
 
 /**

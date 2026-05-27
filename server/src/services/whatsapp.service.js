@@ -190,7 +190,7 @@ export async function sendQuotation(quoteId) {
   await updateStatus(quoteId, { whatsapp_status: 'pending', whatsapp_error: null });
 
   try {
-    const html = renderQuotationHtml(q);
+    const html = await renderQuotationHtml(q);
     const pdf  = await generatePdf(html);
     const filename = `${q.quote_id}.pdf`;
 

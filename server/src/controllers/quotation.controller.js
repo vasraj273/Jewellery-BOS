@@ -28,7 +28,7 @@ export function calculate(req, res, next) {
 }
 
 /** Renders the master template from raw form input — no DB write. */
-export function previewDraft(req, res, next) {
+export async function previewDraft(req, res, next) {
   try {
     const input = req.body || {};
     const pricing = computePricing(input);
@@ -40,7 +40,7 @@ export function previewDraft(req, res, next) {
       created_at: new Date(),
       valid_till: input.valid_till || defaultValidTill()
     };
-    const html = renderQuotationHtml(draft);
+    const html = await renderQuotationHtml(draft);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
   } catch (e) { next(e); }
@@ -69,7 +69,7 @@ export async function preview(req, res, next) {
   try {
     const row = await quotationService.findByQuoteId(req.params.quoteId, req.user);
     if (!row) return res.status(404).send('Quotation not found');
-    const html = renderQuotationHtml(row);
+    const html = await renderQuotationHtml(row);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
   } catch (e) { next(e); }
@@ -79,7 +79,7 @@ export async function pdf(req, res, next) {
   try {
     const row = await quotationService.findByQuoteId(req.params.quoteId, req.user);
     if (!row) return res.status(404).json({ success: false, error: 'Not found' });
-    const html = renderQuotationHtml(row);
+    const html = await renderQuotationHtml(row);
     const buffer = await generatePdf(html);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${row.quote_id}.pdf"`);

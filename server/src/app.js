@@ -9,6 +9,8 @@ import ratesRoutes from './routes/rates.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import usersRoutes from './routes/users.routes.js';
 import auditRoutes from './routes/audit.routes.js';
+import settingsRoutes from './routes/settings.routes.js';
+import mastersRoutes from './routes/masters.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { requireAuth } from './middleware/auth.middleware.js';
 
@@ -39,6 +41,8 @@ export function createApp() {
   // Admin-tier endpoints (auth + role gates applied inside the routers).
   app.use('/api/users',      usersRoutes);
   app.use('/api/audit',      auditRoutes);
+  app.use('/api/settings',   settingsRoutes);
+  app.use('/api/masters',    mastersRoutes);
 
   app.use(errorHandler);
 
