@@ -43,10 +43,16 @@ export default function Layout() {
   }, [drawerOpen]);
 
   return (
-    <div className="min-h-screen flex">
+    // On lg+ the layout pins to the viewport: sidebar stays fixed, only <main>
+    // scrolls. On smaller screens the natural document scroll is preserved
+    // (top bar is already position:fixed).
+    <div className="min-h-screen flex lg:h-screen lg:overflow-hidden">
 
-      {/* ─── Desktop sidebar (lg+) ─── */}
-      <aside className="hidden lg:flex w-64 bg-ink text-white flex-col border-r border-gold/30 shrink-0">
+      {/* ─── Desktop sidebar (lg+) ───
+          Sticky so the navigation + Sign Out stay pinned while the main
+          content area scrolls. Inner column owns its own scroll for the
+          (rare) case where nav exceeds viewport height. */}
+      <aside className="hidden lg:flex w-64 bg-ink text-white flex-col border-r border-gold/30 shrink-0 lg:h-screen lg:overflow-y-auto">
         <SidebarBrand />
         <Nav items={navFor(user?.role)} className="px-4 py-6 space-y-1 flex-1" />
         <SidebarFooter user={user} onLogout={handleLogout} />
@@ -92,8 +98,11 @@ export default function Layout() {
         <SidebarFooter user={user} onLogout={handleLogout} />
       </aside>
 
-      {/* ─── Main ─── */}
-      <main className="flex-1 min-w-0 overflow-x-hidden">
+      {/* ─── Main ───
+          On lg+ this is the only scroll container (parent is overflow-hidden
+          with h-screen), so the sidebar stays pinned. On smaller screens the
+          page scrolls normally; the mobile top bar is fixed. */}
+      <main className="flex-1 min-w-0 overflow-x-hidden lg:overflow-y-auto lg:h-screen">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 pt-20 lg:pt-10">
           <Outlet />
         </div>

@@ -59,8 +59,9 @@ export async function update(id, patch, actor) {
       }
     }
   }
-  // Safety: an actor cannot demote / disable themselves.
-  if (actor && actor.id === target.id) {
+  // Safety: an actor cannot demote / disable themselves. Coerce both ids
+  // to Number so the comparison survives postgres returning BIGINT as text.
+  if (actor && Number(actor.id) === Number(target.id)) {
     if (patch.role && patch.role !== actor.role) {
       const err = new Error('You cannot change your own role');
       err.status = 400; throw err;

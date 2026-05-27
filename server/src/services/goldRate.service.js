@@ -112,7 +112,15 @@ export function getConfig() {
   };
 }
 
-/** "Use live rate" toggle — clears active overrides for (location, purity). */
+/**
+ * Drop all manual overrides for (location, purity) so the live provider rate
+ * becomes the winning row again.
+ *
+ * Was: UPDATE … SET is_override = false. That left the manual row in place
+ * with its newer updated_at, so getLatest()'s ORDER BY updated_at DESC kept
+ * returning the (now non-override) manual price. DELETE removes the row
+ * entirely; the most recent provider row wins on the next read.
+ */
 export async function clearOverride({ location, purity }) {
   if (!location || !purity) {
     const err = new Error('location and purity required');
@@ -121,8 +129,7 @@ export async function clearOverride({ location, purity }) {
   }
   const sql = getDb();
   await sql`
-    UPDATE gold_rates
-    SET is_override = false
-    WHERE location = ${location} AND purity = ${purity} AND is_override = true
+    DELETE FROM gold_rates
+    WHERE location = ${location} AND purity = ${purity} AND source = 'manual'
   `;
 }

@@ -66,5 +66,10 @@ export async function login({ email, password }) {
 export function sanitize(user) {
   if (!user) return null;
   const { password_hash, ...safe } = user;
+  // Postgres returns BIGINT as a string by default (porsager/postgres). Force
+  // ids to Number once at the boundary so downstream equality checks
+  // (req.user.id === input.owner_user_id, users.service self-protection,
+  // etc.) don't compare "3" against 3 and silently fail.
+  if (safe.id != null) safe.id = Number(safe.id);
   return safe;
 }

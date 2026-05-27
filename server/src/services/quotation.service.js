@@ -50,13 +50,14 @@ export async function create(input, actor) {
   // Default: owner = actor. Sales executives can never assign to another
   // user. Admin / super_admin may pass owner_user_id explicitly; we
   // validate the target is active before honouring it.
-  let ownerId = actor?.id ?? null;
-  let ownerName = null;
+  const actorId  = actor?.id != null ? Number(actor.id) : null;
+  let ownerId    = actorId;
+  let ownerName  = null;
   const requestedOwner = input.owner_user_id != null && input.owner_user_id !== ''
     ? Number(input.owner_user_id)
     : null;
 
-  if (requestedOwner && requestedOwner !== actor?.id) {
+  if (requestedOwner != null && requestedOwner !== actorId) {
     if (actor?.role !== 'super_admin' && actor?.role !== 'admin') {
       const err = new Error('You cannot assign a quotation to another user');
       err.status = 403; throw err;
