@@ -13,13 +13,16 @@ export const quotationsApi = {
   previewDraft: (payload)       => api.post('/quotations/preview-draft', payload, { responseType: 'text' }).then(r => r.data),
   remove:    (id)               => api.delete(`/quotations/${id}`).then(r => r.data),
   previewUrl: (id)              => `/api/quotations/${id}/preview`,
-  pdfUrl:     (id)              => `/api/quotations/${id}/pdf`
+  pdfUrl:     (id)              => `/api/quotations/${id}/pdf`,
+  sendWhatsApp: (id)            => api.post(`/quotations/${id}/whatsapp/send`).then(r => r.data),
+  whatsappConfig: ()            => api.get('/quotations/whatsapp/config').then(r => r.data.data)
 };
 
 export const ratesApi = {
   gold:                () => api.get('/rates/gold').then(r => r.data.data),
   goldLatest:          (location) => api.get('/rates/gold/latest', { params: location ? { location } : {} }).then(r => r.data.data),
   goldLocations:       () => api.get('/rates/gold/locations').then(r => r.data.data),
+  goldConfig:          () => api.get('/rates/gold/config').then(r => r.data.data),
   goldRefresh:         () => api.post('/rates/gold/refresh').then(r => r.data.data),
   goldManual:          (payload) => api.post('/rates/gold/manual', payload).then(r => r.data.data),
   goldClearOverride:   (payload) => api.post('/rates/gold/clear-override', payload).then(r => r.data.data),

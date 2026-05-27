@@ -1,5 +1,6 @@
 import { getDatabase } from '../database/connection.js';
 import { getGoldProvider, getSupportedLocations } from './providers/goldProvider.js';
+import { applyMarkup, getMarkupConfig } from './indiaMarkup.service.js';
 
 /**
  * GoldRateService — location-aware single source of truth.
@@ -16,21 +17,34 @@ export async function refresh() {
   const provider = getGoldProvider();
   const db = getDatabase();
   try {
-    const { source, rates } = await provider.fetchRates();
+    const raw = await provider.fetchRates();
+    const adjusted = applyMarkup(raw.rates, raw.source);
+
     const stmt = db.prepare(`
       INSERT INTO gold_rates (location, purity, rate_per_gram, source, is_override, effective_date, updated_at)
       VALUES (?, ?, ?, ?, 0, date('now'), datetime('now'))
     `);
     const tx = db.transaction((rows) => {
-      for (const r of rows) stmt.run(r.location || 'Mumbai', r.purity, r.rate_per_gram, source);
+      for (const r of rows) stmt.run(r.location || 'Mumbai', r.purity, r.rate_per_gram, adjusted.source);
     });
-    tx(rates);
-    console.log(`[GoldRate] Refreshed ${rates.length} rates (${source})`);
-    return { ok: true, source, count: rates.length };
+    tx(adjusted.rates);
+
+    console.log(`[GoldRate] Refreshed ${adjusted.rates.length} rates (${adjusted.source}${adjusted.applied ? ` +${adjusted.pct}%` : ''})`);
+    return { ok: true, source: adjusted.source, markup_pct: adjusted.pct, count: adjusted.rates.length };
   } catch (err) {
     console.warn(`[GoldRate] Refresh failed — keeping existing DB rates. ${err.message}`);
     return { ok: false, error: err.message };
   }
+}
+
+/** Public read of current markup config (for frontend transparency). */
+export function getConfig() {
+  const m = getMarkupConfig();
+  return {
+    provider: (process.env.GOLD_PROVIDER || 'mock').toLowerCase(),
+    markup_enabled: m.enabled,
+    markup_pct: m.pct
+  };
 }
 
 /** All locations with at least one rate (DB-derived) merged with provider-supported list. */

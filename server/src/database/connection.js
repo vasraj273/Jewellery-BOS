@@ -46,7 +46,11 @@ function runMigrations(db) {
   if (!goldCols.includes('is_override')) db.exec(`ALTER TABLE gold_rates ADD COLUMN is_override INTEGER NOT NULL DEFAULT 0`);
 
   const qCols = cols('quotations');
-  if (!qCols.includes('pricing_location')) db.exec(`ALTER TABLE quotations ADD COLUMN pricing_location TEXT`);
+  if (!qCols.includes('pricing_location'))    db.exec(`ALTER TABLE quotations ADD COLUMN pricing_location TEXT`);
+  if (!qCols.includes('whatsapp_status'))     db.exec(`ALTER TABLE quotations ADD COLUMN whatsapp_status TEXT`);
+  if (!qCols.includes('whatsapp_message_id')) db.exec(`ALTER TABLE quotations ADD COLUMN whatsapp_message_id TEXT`);
+  if (!qCols.includes('whatsapp_sent_at'))    db.exec(`ALTER TABLE quotations ADD COLUMN whatsapp_sent_at TEXT`);
+  if (!qCols.includes('whatsapp_error'))      db.exec(`ALTER TABLE quotations ADD COLUMN whatsapp_error TEXT`);
 
   // Post-migration indexes (safe to run after ALTERs ensure columns exist).
   db.exec(`DROP INDEX IF EXISTS idx_gold_rates_purity`);

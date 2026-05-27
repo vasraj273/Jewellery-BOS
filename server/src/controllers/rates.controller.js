@@ -13,6 +13,10 @@ export function listGoldLocations(_req, res, next) {
   try { res.json({ success: true, data: goldSvc.listLocations() }); } catch (e) { next(e); }
 }
 
+export function goldConfig(_req, res, next) {
+  try { res.json({ success: true, data: goldSvc.getConfig() }); } catch (e) { next(e); }
+}
+
 export async function refreshGold(_req, res, next) {
   try { res.json({ success: true, data: await goldSvc.refresh() }); } catch (e) { next(e); }
 }

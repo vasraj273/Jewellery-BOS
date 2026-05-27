@@ -14,15 +14,15 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="flex items-end justify-between mb-10">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 lg:mb-10">
         <div>
-          <h1 className="font-serif text-3xl tracking-wider text-ink">Dashboard</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl tracking-wider text-ink">Dashboard</h1>
           <p className="text-xs uppercase tracking-[3px] text-gold mt-2">JBOS Overview</p>
         </div>
-        <Link to="/quotations/new" className="btn-primary">+ New Quotation</Link>
+        <Link to="/quotations/new" className="btn-primary self-start sm:self-auto">+ New Quotation</Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6">
         <StatCard label="Total Quotations" value={stats.total} />
         <StatCard label="Module" value="Quotation" />
         <StatCard label="Version" value="V1.0" />
@@ -39,12 +39,12 @@ export default function Dashboard() {
         ) : (
           <ul className="divide-y divide-gold-light/40">
             {stats.recent.map((q) => (
-              <li key={q.quote_id} className="py-3 flex justify-between items-center">
-                <div>
-                  <div className="text-sm font-medium">{q.quote_id} · {q.customer_name}</div>
-                  <div className="text-xs text-ink-muted">{q.product_name || '—'}</div>
+              <li key={q.quote_id} className="py-3 flex justify-between items-center gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium truncate">{q.quote_id} · {q.customer_name}</div>
+                  <div className="text-xs text-ink-muted truncate">{q.product_name || '—'}</div>
                 </div>
-                <Link to={`/quotations/${q.quote_id}`} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">
+                <Link to={`/quotations/${q.quote_id}`} className="shrink-0 text-xs uppercase tracking-widest text-gold-dark hover:text-gold">
                   View →
                 </Link>
               </li>

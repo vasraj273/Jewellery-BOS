@@ -4,15 +4,17 @@
 
 @layer base {
   html, body { @apply h-full bg-off-white text-ink font-sans antialiased; }
+  html, body { @apply overflow-x-hidden; }
+  body { @apply w-full; }
   #root { @apply min-h-full; }
 }
 
 @layer components {
-  .btn { @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium tracking-wide uppercase transition; }
+  .btn { @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium tracking-wide uppercase transition whitespace-nowrap; }
   .btn-primary { @apply btn bg-ink text-gold border border-gold hover:bg-black; }
   .btn-secondary { @apply btn bg-white text-ink border border-gold-light hover:border-gold; }
-  .card { @apply bg-white border border-gold-light/60 p-6; }
+  .card { @apply bg-white border border-gold-light/60 p-4 sm:p-6; }
   .input { @apply w-full px-3 py-2 bg-white border border-gold-light/60 text-sm text-ink focus:outline-none focus:border-gold; }
   .label { @apply block text-[11px] uppercase tracking-widest text-ink-muted mb-1; }
-  .section-title { @apply font-serif text-xl text-ink tracking-wider mb-4; }
+  .section-title { @apply font-serif text-lg sm:text-xl text-ink tracking-wider mb-3 sm:mb-4; }
 }

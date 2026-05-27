@@ -6,6 +6,7 @@ const router = Router();
 router.get('/gold',                ctrl.listGold);
 router.get('/gold/latest',         ctrl.latestGold);             // ?location=Mumbai (optional)
 router.get('/gold/locations',      ctrl.listGoldLocations);
+router.get('/gold/config',         ctrl.goldConfig);             // provider + markup status
 router.post('/gold/refresh',       ctrl.refreshGold);
 router.post('/gold/manual',        ctrl.upsertGoldManual);       // { location, purity, rate_per_gram, is_override }
 router.post('/gold/clear-override',ctrl.clearGoldOverride);      // { location, purity }

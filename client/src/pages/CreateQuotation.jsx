@@ -126,17 +126,9 @@ export default function CreateQuotation() {
 
   return (
     <div>
-      <header className="flex justify-between items-end mb-8">
-        <div>
-          <h1 className="font-serif text-3xl tracking-wider text-ink">Create Quotation</h1>
-          <p className="text-xs uppercase tracking-[3px] text-gold mt-2">New Customer Proposal</p>
-        </div>
-        <div className="flex gap-3">
-          <button onClick={openPreview} className="btn-secondary" disabled={!valid}>Preview</button>
-          <button onClick={save} className="btn-primary" disabled={!valid || saving}>
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
+      <header className="mb-6 sm:mb-8">
+        <h1 className="font-serif text-2xl sm:text-3xl tracking-wider text-ink">Create Quotation</h1>
+        <p className="text-xs uppercase tracking-[3px] text-gold mt-2">New Customer Proposal</p>
       </header>
 
       {serverError && (
@@ -152,7 +144,7 @@ export default function CreateQuotation() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="order-1 lg:col-span-2 space-y-6">
 
           <Section title="Customer Details">
             <Grid>
@@ -250,12 +242,13 @@ export default function CreateQuotation() {
               </Field>
             </Grid>
           </Section>
+
         </div>
 
-        <aside className="lg:col-span-1">
-          <div className="card border-l-4 border-l-gold sticky top-6">
+        <aside className="order-2 lg:col-span-1">
+          <div className="card border-l-4 border-l-gold lg:sticky lg:top-6">
             <div className="text-[10px] uppercase tracking-[2.5px] text-gold mb-1">Live Pricing</div>
-            <h3 className="font-serif text-xl text-ink mb-4">Auto-Calculated</h3>
+            <h3 className="font-serif text-lg sm:text-xl text-ink mb-3 sm:mb-4">Auto-Calculated</h3>
             <Row k="Gold Cost"        v={inr(pricing.gold_cost)} />
             <Row k="Diamond Cost"     v={inr(pricing.diamond_cost)} />
             <Row k="Gemstone Cost"    v={inr(pricing.gemstone_cost)} />
@@ -275,16 +268,37 @@ export default function CreateQuotation() {
             </div>
           </div>
         </aside>
+
+        {/* ─── Bottom action bar.
+              Mobile: order-3 → sits after pricing aside (user sees final price first).
+              Desktop: lg:order-2 + lg:col-span-2 → sits in row 2 under forms,
+                       same right edge as Rates & Charges card. */}
+        <div className="order-3 lg:col-span-2 lg:order-2 pt-4 sm:pt-6 border-t border-gold-light/40 flex flex-col sm:flex-row sm:justify-end gap-3">
+          <button
+            onClick={openPreview}
+            disabled={!valid}
+            className="btn-secondary w-full sm:w-auto sm:min-w-[160px] justify-center"
+          >
+            Preview
+          </button>
+          <button
+            onClick={save}
+            disabled={!valid || saving}
+            className="btn-primary w-full sm:w-auto sm:min-w-[160px] justify-center"
+          >
+            {saving ? 'Saving…' : 'Save Quotation'}
+          </button>
+        </div>
       </div>
 
       {previewHtml && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex flex-col">
-          <div className="bg-ink text-gold px-6 py-3 flex justify-between items-center">
-            <div className="font-serif tracking-widest text-sm">Quotation Preview · DRAFT</div>
+        <div className="fixed inset-0 bg-black/70 z-[60] flex flex-col">
+          <div className="bg-ink text-gold px-3 sm:px-6 py-2 sm:py-3 flex flex-wrap justify-between items-center gap-2">
+            <div className="font-serif tracking-widest text-xs sm:text-sm">Quotation Preview · DRAFT</div>
             <div className="flex gap-2">
               <button onClick={() => setPreviewHtml('')} className="text-xs uppercase tracking-widest px-3 py-1 border border-gold hover:bg-black">Close</button>
               <button onClick={save} disabled={saving} className="text-xs uppercase tracking-widest px-3 py-1 bg-gold text-ink hover:bg-gold-light">
-                {saving ? 'Saving…' : 'Save Quotation'}
+                {saving ? 'Saving…' : 'Save'}
               </button>
             </div>
           </div>

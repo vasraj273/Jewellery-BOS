@@ -2,6 +2,7 @@ import * as quotationService from '../services/quotation.service.js';
 import { computePricing } from '../services/pricing.service.js';
 import { renderQuotationHtml } from '../services/template.service.js';
 import { generatePdf } from '../services/pdf.service.js';
+import * as whatsapp from '../services/whatsapp.service.js';
 
 export function list(req, res, next) {
   try {
@@ -85,4 +86,16 @@ export function remove(req, res, next) {
     if (!ok) return res.status(404).json({ success: false, error: 'Not found' });
     res.json({ success: true });
   } catch (e) { next(e); }
+}
+
+export async function sendWhatsApp(req, res, next) {
+  try {
+    const result = await whatsapp.sendQuotation(req.params.quoteId);
+    const updated = quotationService.findByQuoteId(req.params.quoteId);
+    res.status(result.ok ? 200 : 502).json({ success: result.ok, data: { ...result, quotation: updated } });
+  } catch (e) { next(e); }
+}
+
+export function whatsappConfig(_req, res, next) {
+  try { res.json({ success: true, data: whatsapp.getConfig() }); } catch (e) { next(e); }
 }

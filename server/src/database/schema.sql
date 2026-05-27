@@ -74,6 +74,12 @@ CREATE TABLE IF NOT EXISTS quotations (
   notes               TEXT,
   pdf_path            TEXT,
 
+  -- WhatsApp delivery
+  whatsapp_status     TEXT,                              -- pending | sent | failed
+  whatsapp_message_id TEXT,
+  whatsapp_sent_at    TEXT,
+  whatsapp_error      TEXT,
+
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
