@@ -28,9 +28,30 @@ const upload = multer({
   }
 });
 
+// Document uploads accept PDFs too (employee vault). Same disk approach.
+const docUpload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (/^(image\/(png|jpe?g|webp)|application\/pdf)$/.test(file.mimetype)) cb(null, true);
+    else cb(new Error('Only PNG/JPG/WEBP/PDF allowed'));
+  }
+});
+
 const router = Router();
 
 router.post('/image', upload.single('image'), (req, res) => {
+  if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+  res.json({
+    success: true,
+    data: {
+      filename: req.file.filename,
+      url: `/uploads/${req.file.filename}`
+    }
+  });
+});
+
+router.post('/document', docUpload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
   res.json({
     success: true,

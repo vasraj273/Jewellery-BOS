@@ -273,6 +273,12 @@ async function runMigrations(tx) {
     await tx.unsafe(`ALTER TABLE leads ADD COLUMN converted_at timestamptz`);
   }
 
+  // M7 — shift assignment on employees
+  const empCols = await cols('employees');
+  if (empCols.length && !empCols.includes('assigned_shift_id')) {
+    await tx.unsafe(`ALTER TABLE employees ADD COLUMN assigned_shift_id bigint`);
+  }
+
   // Drop legacy SQLite-era index name if it still exists from a prior environment.
   await tx.unsafe(`DROP INDEX IF EXISTS idx_gold_rates_purity`);
   await tx.unsafe(`CREATE INDEX IF NOT EXISTS idx_gold_rates_loc_purity ON gold_rates(location, purity, updated_at DESC)`);

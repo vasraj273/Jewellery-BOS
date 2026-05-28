@@ -10,8 +10,13 @@ import LeadDetail from './pages/LeadDetail.jsx';
 import Customers from './pages/Customers.jsx';
 import CustomerDetail from './pages/CustomerDetail.jsx';
 import Employees from './pages/Employees.jsx';
+import EmployeeDetail from './pages/EmployeeDetail.jsx';
 import Attendance from './pages/Attendance.jsx';
 import LeavesPage from './pages/Leaves.jsx';
+import Tasks from './pages/Tasks.jsx';
+import Shifts from './pages/Shifts.jsx';
+import Incentives from './pages/Incentives.jsx';
+import HRCalendar from './pages/HRCalendar.jsx';
 import UsersAdmin from './pages/admin/Users.jsx';
 import SettingsAdmin from './pages/admin/Settings.jsx';
 import MastersAdmin from './pages/admin/Masters.jsx';
@@ -37,8 +42,13 @@ export const router = createBrowserRouter([
       { path: 'customers',                element: <Customers /> },
       { path: 'customers/:id',            element: <CustomerDetail /> },
       { path: 'employees',                element: <RequireRole roles={ADMIN_ROLES}><Employees /></RequireRole> },
+      { path: 'employees/:id',            element: <RequireRole roles={ADMIN_ROLES}><EmployeeDetail /></RequireRole> },
       { path: 'attendance',               element: <Attendance /> },
       { path: 'leaves',                   element: <LeavesPage /> },
+      { path: 'tasks',                    element: <Tasks /> },
+      { path: 'shifts',                   element: <RequireRole roles={ADMIN_ROLES}><Shifts /></RequireRole> },
+      { path: 'incentives',               element: <Incentives /> },
+      { path: 'hr-calendar',              element: <RequireRole roles={ADMIN_ROLES}><HRCalendar /></RequireRole> },
       { path: 'admin/users',      element: <RequireRole roles={ADMIN_ROLES}><UsersAdmin /></RequireRole> },
       { path: 'admin/settings',   element: <RequireRole roles={ADMIN_ROLES}><SettingsAdmin /></RequireRole> },
       { path: 'admin/masters',    element: <RequireRole roles={ADMIN_ROLES}><MastersAdmin /></RequireRole> },

@@ -130,7 +130,48 @@ export const employeesApi = {
   get:        (id)          => api.get(`/employees/${id}`).then(r => r.data.data),
   create:     (payload)     => api.post('/employees', payload).then(r => r.data.data),
   update:     (id, payload) => api.put(`/employees/${id}`, payload).then(r => r.data.data),
-  deactivate: (id)          => api.delete(`/employees/${id}`).then(r => r.data.data)
+  deactivate: (id)          => api.delete(`/employees/${id}`).then(r => r.data.data),
+  // compensation
+  getComp:    (id)          => api.get(`/employees/${id}/compensation`).then(r => r.data.data),
+  saveComp:   (id, payload) => api.put(`/employees/${id}/compensation`, payload).then(r => r.data.data),
+  // documents
+  docs:       (id)          => api.get(`/employees/${id}/documents`).then(r => r.data.data),
+  addDoc:     (id, payload) => api.post(`/employees/${id}/documents`, payload).then(r => r.data.data),
+  removeDoc:  (docId)       => api.delete(`/employees/documents/${docId}`).then(r => r.data.data)
+};
+
+export const shiftsApi = {
+  list:       (params = {})       => api.get('/shifts', { params }).then(r => r.data.data),
+  create:     (payload)           => api.post('/shifts', payload).then(r => r.data.data),
+  update:     (id, payload)       => api.put(`/shifts/${id}`, payload).then(r => r.data.data),
+  deactivate: (id)                => api.delete(`/shifts/${id}`).then(r => r.data.data),
+  assign:     (employeeId, shiftId) => api.put(`/shifts/assign/${employeeId}`, { shift_id: shiftId }).then(r => r.data.data)
+};
+
+export const tasksApi = {
+  list:      (params = {}) => api.get('/tasks', { params }).then(r => r.data.data),
+  create:    (payload)     => api.post('/tasks', payload).then(r => r.data.data),
+  update:    (id, payload) => api.put(`/tasks/${id}`, payload).then(r => r.data.data),
+  dashboard: ()            => api.get('/tasks/dashboard').then(r => r.data.data)
+};
+
+export const incentivesApi = {
+  list:      (params = {}) => api.get('/incentives', { params }).then(r => r.data.data),
+  create:    (payload)     => api.post('/incentives', payload).then(r => r.data.data),
+  setStatus: (id, status)  => api.put(`/incentives/${id}`, { status }).then(r => r.data.data),
+  dashboard: ()            => api.get('/incentives/dashboard').then(r => r.data.data)
+};
+
+export const hrCalendarApi = {
+  month: (month) => api.get('/hr-calendar', { params: month ? { month } : {} }).then(r => r.data.data)
+};
+
+export const docUploadApi = {
+  upload: (file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return api.post('/uploads/document', fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data.data);
+  }
 };
 
 export const attendanceApi = {

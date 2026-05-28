@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { quotationsApi, leadsApi, customersApi, remindersApi, analyticsApi, attendanceApi, leavesApi } from '../api/client.js';
+import { quotationsApi, leadsApi, customersApi, remindersApi, analyticsApi, attendanceApi, leavesApi, tasksApi, incentivesApi } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import GoldRateWidget from '../components/GoldRateWidget.jsx';
 
@@ -19,6 +19,8 @@ export default function Dashboard() {
   const [att, setAtt]       = useState({ present: 0, absent: 0, leave: 0, half_day: 0 });
   const [lv, setLv]         = useState({ pending_approvals: 0, leaves_today: 0 });
   const [perf, setPerf]     = useState([]);
+  const [tk, setTk]         = useState({ pending: 0, overdue: 0, completed_today: 0 });
+  const [inc, setInc]       = useState({ pending_count: 0, pending_total: 0, top_earners: [] });
 
   useEffect(() => {
     quotationsApi.list().then((r) => setStats({ total: r.length, recent: r.slice(0, 5) })).catch(() => {});
@@ -27,10 +29,12 @@ export default function Dashboard() {
     remindersApi.dashboard().then(setRem).catch(() => {});
     attendanceApi.today().then(setAtt).catch(() => {});
     leavesApi.dashboard().then(setLv).catch(() => {});
+    tasksApi.dashboard().then(setTk).catch(() => {});
     if (isAdminTier) {
       analyticsApi.conversion().then(setConv).catch(() => {});
       analyticsApi.sales().then(setSales).catch(() => {});
       analyticsApi.performance().then(setPerf).catch(() => {});
+      incentivesApi.dashboard().then(setInc).catch(() => {});
     }
   }, [isAdminTier]);
 
@@ -62,12 +66,21 @@ export default function Dashboard() {
       </div>
 
       {/* HRMS widgets */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
         <StatCard label="Present Today"     value={att.present} to="/attendance" />
         <StatCard label="Absent Today"      value={att.absent}  to="/attendance" highlight={att.absent > 0} />
         <StatCard label="On Leave Today"    value={lv.leaves_today} to="/leaves" />
         <StatCard label="Pending Approvals" value={lv.pending_approvals} to="/leaves" highlight={lv.pending_approvals > 0} />
-        <StatCard label="Half Day"          value={att.half_day} to="/attendance" />
+      </div>
+
+      {/* Tasks + incentives widgets */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+        <StatCard label="Pending Tasks"     value={tk.pending}         to="/tasks" />
+        <StatCard label="Overdue Tasks"     value={tk.overdue}         to="/tasks" highlight={tk.overdue > 0} />
+        <StatCard label="Completed Today"   value={tk.completed_today} to="/tasks" />
+        {isAdminTier && (
+          <StatCard label="Incentive Pending" value={`₹${(inc.pending_total || 0).toLocaleString('en-IN')}`} to="/incentives" hint={`${inc.pending_count} payout(s)`} highlight={inc.pending_count > 0} />
+        )}
       </div>
 
       {/* Admin KPI */}
@@ -124,14 +137,17 @@ export default function Dashboard() {
                   <th className="px-4 py-2 text-right">Converted</th>
                   <th className="px-4 py-2 text-right">Customers</th>
                   <th className="px-4 py-2 text-right">Conv %</th>
+                  <th className="px-4 py-2 text-right">Tasks ✓</th>
+                  <th className="px-4 py-2 text-right">Overdue</th>
                   <th className="px-4 py-2 text-right">Reminders</th>
-                  <th className="px-4 py-2 text-right">Attendance %</th>
+                  <th className="px-4 py-2 text-right">Attend %</th>
                   <th className="px-4 py-2 text-right">Leaves</th>
+                  <th className="px-4 py-2 text-right">Incentive ₹</th>
                 </tr>
               </thead>
               <tbody>
                 {perf.length === 0 ? (
-                  <tr><td colSpan="9" className="px-4 py-4 text-center text-ink-muted">No data yet.</td></tr>
+                  <tr><td colSpan="12" className="px-4 py-4 text-center text-ink-muted">No data yet.</td></tr>
                 ) : perf.map((p) => (
                   <tr key={p.employee_id} className="border-b border-gold-light/20 last:border-0">
                     <td className="px-4 py-2">{p.full_name}</td>
@@ -140,9 +156,12 @@ export default function Dashboard() {
                     <td className="px-4 py-2 text-right">{p.converted}</td>
                     <td className="px-4 py-2 text-right">{p.customers}</td>
                     <td className="px-4 py-2 text-right font-medium text-gold-dark">{p.conversion_pct}%</td>
+                    <td className="px-4 py-2 text-right">{p.tasks_completed}</td>
+                    <td className={`px-4 py-2 text-right ${p.tasks_overdue > 0 ? 'text-red-600' : ''}`}>{p.tasks_overdue}</td>
                     <td className="px-4 py-2 text-right">{p.reminders_done}</td>
                     <td className="px-4 py-2 text-right">{p.attendance_pct}%</td>
                     <td className="px-4 py-2 text-right">{p.leave_count}</td>
+                    <td className="px-4 py-2 text-right">{Number(p.incentive_earned || 0).toLocaleString('en-IN')}</td>
                   </tr>
                 ))}
               </tbody>

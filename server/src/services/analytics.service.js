@@ -67,7 +67,10 @@ export async function employeePerformance(filters = {}) {
       COALESCE(at.total_days, 0)     AS days_marked,
       CASE WHEN COALESCE(at.total_days,0) > 0
            THEN ROUND(100.0 * COALESCE(at.present,0) / at.total_days, 0) ELSE 0 END AS attendance_pct,
-      COALESCE(lv.leave_count, 0)    AS leave_count
+      COALESCE(lv.leave_count, 0)    AS leave_count,
+      COALESCE(tk.tasks_completed, 0) AS tasks_completed,
+      COALESCE(tk.tasks_overdue, 0)   AS tasks_overdue,
+      COALESCE(inc.incentive_earned, 0)::numeric AS incentive_earned
     FROM employees e
     LEFT JOIN (
       SELECT owner_user_id, count(*)::int AS quote_count
@@ -97,6 +100,16 @@ export async function employeePerformance(filters = {}) {
       SELECT employee_id, count(*)::int AS leave_count
       FROM leaves WHERE status = 'approved' GROUP BY employee_id
     ) lv ON lv.employee_id = e.id
+    LEFT JOIN (
+      SELECT assigned_to_user_id,
+             count(*) FILTER (WHERE status = 'completed')::int AS tasks_completed,
+             count(*) FILTER (WHERE status IN ('pending','in_progress') AND due_date < current_date)::int AS tasks_overdue
+      FROM tasks GROUP BY assigned_to_user_id
+    ) tk ON tk.assigned_to_user_id = e.user_id
+    LEFT JOIN (
+      SELECT employee_id, COALESCE(sum(amount),0)::numeric AS incentive_earned
+      FROM incentives WHERE status = 'paid' GROUP BY employee_id
+    ) inc ON inc.employee_id = e.id
     WHERE e.is_active = true
       ${filters.employee_id ? sql`AND e.id = ${Number(filters.employee_id)}` : sql``}
       ${filters.role ? sql`AND e.role = ${filters.role}` : sql``}

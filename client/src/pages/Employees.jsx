@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { employeesApi, usersApi } from '../api/client.js';
 
 const EMPLOYMENT = [
@@ -90,6 +91,7 @@ export default function Employees() {
                 <td className="px-4 py-3 text-ink-muted text-xs">{fmtD(e.joining_date)}</td>
                 <td className="px-4 py-3"><span className={`text-[10px] uppercase tracking-widest border px-2 py-0.5 ${EMP_STYLE[e.employment_status] || ''}`}>{(e.employment_status || '').replace('_', ' ')}</span></td>
                 <td className="px-4 py-3 text-right space-x-3 whitespace-nowrap">
+                  <Link to={`/employees/${e.id}`} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">View</Link>
                   <button onClick={() => setEditing(e)} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Edit</button>
                   {e.is_active && <button onClick={async () => { await employeesApi.deactivate(e.id); flash('ok', `${e.full_name} deactivated`); reload(); }} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Deactivate</button>}
                 </td>

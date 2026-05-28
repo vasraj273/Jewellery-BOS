@@ -18,6 +18,10 @@ import analyticsRoutes from './routes/analytics.routes.js';
 import employeesRoutes from './routes/employees.routes.js';
 import attendanceRoutes from './routes/attendance.routes.js';
 import leavesRoutes from './routes/leaves.routes.js';
+import shiftsRoutes from './routes/shifts.routes.js';
+import tasksRoutes from './routes/tasks.routes.js';
+import incentivesRoutes from './routes/incentives.routes.js';
+import hrCalendarRoutes from './routes/hrCalendar.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { requireAuth } from './middleware/auth.middleware.js';
 
@@ -57,6 +61,10 @@ export function createApp() {
   app.use('/api/employees',  employeesRoutes);
   app.use('/api/attendance', attendanceRoutes);
   app.use('/api/leaves',     leavesRoutes);
+  app.use('/api/shifts',     shiftsRoutes);
+  app.use('/api/tasks',      tasksRoutes);
+  app.use('/api/incentives', incentivesRoutes);
+  app.use('/api/hr-calendar',hrCalendarRoutes);
 
   app.use(errorHandler);
 

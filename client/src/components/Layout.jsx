@@ -9,11 +9,15 @@ const BASE_NAV = [
   { to: '/leads',            label: 'Leads' },
   { to: '/customers',        label: 'Customers' },
   { to: '/attendance',       label: 'Attendance' },   // all roles
-  { to: '/leaves',           label: 'Leaves' }        // all roles
+  { to: '/leaves',           label: 'Leaves' },       // all roles
+  { to: '/tasks',            label: 'Tasks' }         // all roles
 ];
 
 const ADMIN_NAV = [
   { to: '/employees',        label: 'Employees',   roles: ['super_admin', 'admin'] },
+  { to: '/shifts',           label: 'Shifts',      roles: ['super_admin', 'admin'] },
+  { to: '/incentives',       label: 'Incentives',  roles: ['super_admin', 'admin'] },
+  { to: '/hr-calendar',      label: 'HR Calendar', roles: ['super_admin', 'admin'] },
   { to: '/admin/users',      label: 'Users',       roles: ['super_admin', 'admin'] },
   { to: '/admin/settings',   label: 'Settings',    roles: ['super_admin', 'admin'] },
   { to: '/admin/masters',    label: 'Masters',     roles: ['super_admin', 'admin'] },
