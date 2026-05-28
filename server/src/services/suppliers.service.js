@@ -63,3 +63,7 @@ export async function update(id, patch) {
 export async function deactivate(id) {
   return update(id, { is_active: false });
 }
+
+export async function activate(id) {
+  return update(id, { is_active: true });
+}

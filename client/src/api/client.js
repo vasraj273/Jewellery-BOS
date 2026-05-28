@@ -236,7 +236,8 @@ export const suppliersApi = {
   get:        (id)          => api.get(`/suppliers/${id}`).then(r => r.data.data),
   create:     (payload)     => api.post('/suppliers', payload).then(r => r.data.data),
   update:     (id, payload) => api.put(`/suppliers/${id}`, payload).then(r => r.data.data),
-  deactivate: (id)          => api.delete(`/suppliers/${id}`).then(r => r.data.data)
+  deactivate: (id)          => api.delete(`/suppliers/${id}`).then(r => r.data.data),
+  activate:   (id)          => api.put(`/suppliers/${id}/activate`).then(r => r.data.data)
 };
 
 export const purchasesApi = {

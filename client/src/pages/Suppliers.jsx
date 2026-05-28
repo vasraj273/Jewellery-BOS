@@ -85,7 +85,9 @@ export default function Suppliers() {
                   <td className="px-4 py-3 text-ink-muted text-xs">{s.gst_number || '—'}</td>
                   <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                     <button onClick={() => { setEditing(s.id); setForm({ name: s.name, gst_number: s.gst_number || '', contact_person: s.contact_person || '', mobile: s.mobile || '', email: s.email || '', address: s.address || '', category: s.category || '', notes: s.notes || '' }); }} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Edit</button>
-                    {s.is_active && <button onClick={async () => { try { await suppliersApi.deactivate(s.id); flash('ok', 'Deactivated'); reload(); } catch (err) { flash('err', err?.response?.data?.error || err.message); } }} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Off</button>}
+                    {s.is_active
+                      ? <button onClick={async () => { try { await suppliersApi.deactivate(s.id); flash('ok', 'Deactivated'); reload(); } catch (err) { flash('err', err?.response?.data?.error || err.message); } }} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Off</button>
+                      : <button onClick={async () => { try { await suppliersApi.activate(s.id); flash('ok', 'Reactivated'); reload(); } catch (err) { flash('err', err?.response?.data?.error || err.message); } }} className="text-xs uppercase tracking-widest text-green-700 hover:text-green-800">On</button>}
                   </td>
                 </tr>
               ))}
