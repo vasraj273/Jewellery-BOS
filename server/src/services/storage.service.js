@@ -68,9 +68,15 @@ export async function persistUpload(file, { folder = 'jbos' } = {}) {
   if (isCloudEnabled()) {
     try {
       const cloudinary = await getCloudinary();
+      // Images deliver fine as `image`. PDFs/other docs MUST go up as `raw`:
+      // resource_type:'auto' classifies a PDF as an `image`, whose delivery is
+      // gated behind the account-level "allow PDF/ZIP delivery" flag and
+      // otherwise 401s with "Failed to load PDF document". `raw` serves the
+      // original bytes (extension preserved) with no account toggle needed.
+      const isImage = /^image\//.test(file.mimetype || '');
       const result = await cloudinary.uploader.upload(file.path, {
         folder,
-        resource_type: 'auto',          // images + PDFs
+        resource_type: isImage ? 'image' : 'raw',
         use_filename: true,
         unique_filename: true,
         overwrite: false
