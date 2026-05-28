@@ -4,6 +4,7 @@ import { renderQuotationHtml } from '../services/template.service.js';
 import { generatePdf } from '../services/pdf.service.js';
 import * as whatsapp from '../services/whatsapp.service.js';
 import * as audit from '../services/audit.service.js';
+import * as leads from '../services/leads.service.js';
 
 export async function list(req, res, next) {
   try {
@@ -58,9 +59,19 @@ export async function create(req, res, next) {
     audit.record({
       actor: req.user, action: 'quotation.create',
       entityType: 'quotation', entityId: saved.quote_id,
-      metadata: { final_price: saved.final_price, location: saved.pricing_location },
+      metadata: { final_price: saved.final_price, location: saved.pricing_location, source_lead_id: saved.source_lead_id || null },
       req
     });
+    // CRM linkage: if this quote came from a lead, stamp the lead back.
+    if (saved.source_lead_id) {
+      await leads.attachQuotation(saved.source_lead_id, saved.id, req.user).catch(() => {});
+      audit.record({
+        actor: req.user, action: 'lead.quote_create',
+        entityType: 'lead', entityId: saved.source_lead_id,
+        metadata: { quote_id: saved.quote_id },
+        req
+      });
+    }
     res.status(201).json({ success: true, data: saved });
   } catch (e) { next(e); }
 }

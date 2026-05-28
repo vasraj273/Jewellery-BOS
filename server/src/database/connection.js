@@ -116,6 +116,46 @@ async function autoSeedMasters() {
     { label: 'Earring · ₹1100/gm',  sort_order: 40, extra: { charge_type: 'per_gram', charge_value: 1100 } },
     { label: 'Pendant · ₹2500 flat',sort_order: 50, extra: { charge_type: 'fixed',    charge_value: 2500 } }
   ]);
+
+  // M4 — lead catalogs
+  const seedSimple = async (table, rows) => {
+    const [{ count }] = await sql.unsafe(`SELECT count(*)::int AS count FROM ${table}`);
+    if (count > 0) return;
+    for (const r of rows) {
+      await sql.unsafe(`INSERT INTO ${table} (label, sort_order) VALUES ($1, $2)`, [r.label, r.sort_order]);
+    }
+    console.log(`[JBOS] Seeded ${rows.length} rows into ${table}.`);
+  };
+  await seedSimple('lead_sources', [
+    { label: 'Instagram',  sort_order: 10 },
+    { label: 'Referral',   sort_order: 20 },
+    { label: 'Walk-in',    sort_order: 30 },
+    { label: 'WhatsApp',   sort_order: 40 },
+    { label: 'Website',    sort_order: 50 },
+    { label: 'Exhibition', sort_order: 60 },
+    { label: 'Call',       sort_order: 70 }
+  ]);
+
+  // lead_statuses carries is_terminal so dashboard/conversion logic can key
+  // off semantics rather than label text.
+  const [{ count: statusCount }] = await sql`SELECT count(*)::int AS count FROM lead_statuses`;
+  if (statusCount === 0) {
+    const statuses = [
+      { label: 'New',             sort_order: 10, is_terminal: null },
+      { label: 'Contacted',       sort_order: 20, is_terminal: null },
+      { label: 'Interested',      sort_order: 30, is_terminal: null },
+      { label: 'Visit Scheduled', sort_order: 40, is_terminal: null },
+      { label: 'Follow-up',       sort_order: 50, is_terminal: null },
+      { label: 'Quotation Sent',  sort_order: 60, is_terminal: null },
+      { label: 'Negotiation',     sort_order: 70, is_terminal: null },
+      { label: 'Converted',       sort_order: 80, is_terminal: 'converted' },
+      { label: 'Lost',            sort_order: 90, is_terminal: 'lost' }
+    ];
+    for (const s of statuses) {
+      await sql`INSERT INTO lead_statuses (label, sort_order, is_terminal) VALUES (${s.label}, ${s.sort_order}, ${s.is_terminal})`;
+    }
+    console.log(`[JBOS] Seeded ${statuses.length} lead statuses.`);
+  }
 }
 
 /**
@@ -190,6 +230,12 @@ async function runMigrations(tx) {
     `);
   }
   await tx.unsafe(`CREATE INDEX IF NOT EXISTS idx_quotations_owner ON quotations(owner_user_id)`);
+
+  // M4 — CRM lead linkage on quotations
+  if (!qCols.includes('source_lead_id')) {
+    await tx.unsafe(`ALTER TABLE quotations ADD COLUMN source_lead_id bigint`);
+  }
+  await tx.unsafe(`CREATE INDEX IF NOT EXISTS idx_quotations_source_lead ON quotations(source_lead_id)`);
 
   // Drop legacy SQLite-era index name if it still exists from a prior environment.
   await tx.unsafe(`DROP INDEX IF EXISTS idx_gold_rates_purity`);

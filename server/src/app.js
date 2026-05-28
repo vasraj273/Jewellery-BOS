@@ -11,6 +11,7 @@ import usersRoutes from './routes/users.routes.js';
 import auditRoutes from './routes/audit.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import mastersRoutes from './routes/masters.routes.js';
+import leadsRoutes from './routes/leads.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { requireAuth } from './middleware/auth.middleware.js';
 
@@ -43,6 +44,7 @@ export function createApp() {
   app.use('/api/audit',      auditRoutes);
   app.use('/api/settings',   settingsRoutes);
   app.use('/api/masters',    mastersRoutes);
+  app.use('/api/leads',      leadsRoutes);
 
   app.use(errorHandler);
 

@@ -91,6 +91,18 @@ export const mastersApi = {
   deactivate:  (type, id)          => api.delete(`/masters/${type}/${id}`).then(r => r.data.data)
 };
 
+export const leadsApi = {
+  list:        (params = {})        => api.get('/leads', { params }).then(r => r.data.data),
+  get:         (id)                 => api.get(`/leads/${id}`).then(r => r.data.data),
+  create:      (payload)            => api.post('/leads', payload).then(r => r.data.data),
+  update:      (id, payload)        => api.put(`/leads/${id}`, payload).then(r => r.data.data),
+  followups:   (id)                 => api.get(`/leads/${id}/followups`).then(r => r.data.data),
+  addFollowup: (id, payload)        => api.post(`/leads/${id}/followups`, payload).then(r => r.data.data),
+  stats:       ()                   => api.get('/leads/stats').then(r => r.data.data),
+  sources:     ()                   => api.get('/leads/sources').then(r => r.data.data),
+  statuses:    ()                   => api.get('/leads/statuses').then(r => r.data.data)
+};
+
 export const uploadsApi = {
   image: (file) => {
     const fd = new FormData();

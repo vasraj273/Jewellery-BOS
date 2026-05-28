@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { quotationsApi, ratesApi, usersApi, mastersApi } from '../api/client.js';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { quotationsApi, ratesApi, usersApi, mastersApi, leadsApi } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import GoldRateWidget from '../components/GoldRateWidget.jsx';
 
@@ -27,7 +27,7 @@ const INITIAL = {
   gold_rate_per_gram: 5850, diamond_rate_per_carat: 85000, gemstone_rate_per_carat: 0,
   making_charge_type: 'per_gram', making_charge_value: 1200,
   hallmark_charge: 250, certification_charge: 0, shipping_charge: 500,
-  owner_user_id: null, sales_executive: '', notes: ''
+  owner_user_id: null, sales_executive: '', notes: '', source_lead_id: null
 };
 
 // Mirror of server pricing.service.js — runs client-side for instant feedback.
@@ -92,6 +92,9 @@ export default function CreateQuotation() {
   const [serverError, setServerError] = useState('');
   const [liveRates, setLiveRates] = useState({});  // { '18Kt': 5800, ... }
   const [assignees, setAssignees] = useState([]);   // admin tier only
+  const [searchParams] = useSearchParams();
+  const leadId = searchParams.get('lead');
+  const [leadBanner, setLeadBanner] = useState(null);
   const [masters, setMasters] = useState({
     product_categories: FALLBACK.product_categories,
     metal_types:        FALLBACK.metal_types,
@@ -143,6 +146,25 @@ export default function CreateQuotation() {
     }));
     setTouched((t) => ({ ...t, owner_user_id: true }));
   }
+
+  // Lead → Quotation: prefill customer fields + carry source_lead_id.
+  useEffect(() => {
+    if (!leadId) return;
+    leadsApi.get(leadId)
+      .then((lead) => {
+        setForm((f) => ({
+          ...f,
+          customer_name:   lead.name || f.customer_name,
+          customer_mobile: lead.mobile || f.customer_mobile,
+          customer_email:  lead.email || f.customer_email,
+          occasion:        lead.occasion || f.occasion,
+          source_lead_id:  lead.id
+        }));
+        setLeadBanner({ code: lead.lead_code, name: lead.name });
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leadId]);
 
   const pricing = useMemo(() => computePricing(form), [form]);
   const errors  = useMemo(() => validate(form), [form]);
@@ -202,6 +224,13 @@ export default function CreateQuotation() {
 
       {serverError && (
         <div className="mb-4 px-4 py-3 border border-red-300 bg-red-50 text-red-700 text-sm">{serverError}</div>
+      )}
+
+      {leadBanner && (
+        <div className="mb-4 px-4 py-3 border border-gold-light bg-gold-pale text-gold-dark text-sm flex items-center gap-2">
+          <span className="text-[10px] uppercase tracking-widest">Converting Lead</span>
+          <strong>{leadBanner.code}</strong> · {leadBanner.name} — customer details prefilled.
+        </div>
       )}
 
       <div className="mb-6">

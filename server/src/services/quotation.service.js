@@ -224,7 +224,8 @@ export async function create(input, actor) {
     pricing_location: input.pricing_location || 'Mumbai',
     sales_executive: salesExecLabel,
     valid_till: validTill,
-    notes: input.notes || ''
+    notes: input.notes || '',
+    source_lead_id: input.source_lead_id ? Number(input.source_lead_id) : null
   };
 
   // postgres.js helper: sql(obj) expands to (col1, col2, ...) VALUES (val1, val2, ...)

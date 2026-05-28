@@ -5,7 +5,8 @@ import { useAuth } from '../auth/AuthContext.jsx';
 const BASE_NAV = [
   { to: '/dashboard',        label: 'Dashboard' },
   { to: '/quotations/new',   label: 'Create Quotation' },
-  { to: '/quotations',       label: 'Quotation History' }
+  { to: '/quotations',       label: 'Quotation History' },
+  { to: '/leads',            label: 'Leads' }
 ];
 
 const ADMIN_NAV = [
