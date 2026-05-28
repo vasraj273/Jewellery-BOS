@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { quotationsApi, ratesApi, usersApi, mastersApi, leadsApi } from '../api/client.js';
+import { quotationsApi, ratesApi, usersApi, mastersApi, leadsApi, inventoryApi } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import GoldRateWidget from '../components/GoldRateWidget.jsx';
 
@@ -27,7 +27,8 @@ const INITIAL = {
   gold_rate_per_gram: 5850, diamond_rate_per_carat: 85000, gemstone_rate_per_carat: 0,
   making_charge_type: 'per_gram', making_charge_value: 1200,
   hallmark_charge: 250, certification_charge: 0, shipping_charge: 500,
-  owner_user_id: null, sales_executive: '', notes: '', source_lead_id: null
+  owner_user_id: null, sales_executive: '', notes: '', source_lead_id: null,
+  inventory_item_id: null
 };
 
 // Mirror of server pricing.service.js — runs client-side for instant feedback.
@@ -94,7 +95,9 @@ export default function CreateQuotation() {
   const [assignees, setAssignees] = useState([]);   // admin tier only
   const [searchParams] = useSearchParams();
   const leadId = searchParams.get('lead');
+  const itemId = searchParams.get('item');
   const [leadBanner, setLeadBanner] = useState(null);
+  const [itemBanner, setItemBanner] = useState(null);
   const [masters, setMasters] = useState({
     product_categories: FALLBACK.product_categories,
     metal_types:        FALLBACK.metal_types,
@@ -166,6 +169,37 @@ export default function CreateQuotation() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leadId]);
 
+  // Inventory → Quotation: prefill jewellery fields from the stock item and
+  // carry inventory_item_id so the server reserves the piece on save.
+  useEffect(() => {
+    if (!itemId) return;
+    inventoryApi.get(itemId)
+      .then((it) => {
+        if (it.status !== 'in_stock') {
+          setServerError(`Item ${it.sku} is ${it.status.replace('_', ' ')} and cannot be quoted.`);
+          return;
+        }
+        setForm((f) => ({
+          ...f,
+          inventory_item_id: it.id,
+          product_name:     it.name || f.product_name,
+          product_category: it.category || f.product_category,
+          metal_type:       it.metal_type || f.metal_type,
+          purity:           it.purity || f.purity,
+          gross_weight:     it.gross_weight || f.gross_weight,
+          net_weight:       it.net_weight || f.net_weight,
+          diamond_type:     it.diamond_type || f.diamond_type,
+          diamond_carat:    it.diamond_carat || f.diamond_carat,
+          gemstone:         it.gemstone || f.gemstone,
+          gemstone_carat:   it.gemstone_carat || f.gemstone_carat,
+          pricing_location: it.location || f.pricing_location
+        }));
+        setItemBanner({ sku: it.sku, name: it.name });
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemId]);
+
   const pricing = useMemo(() => computePricing(form), [form]);
   const errors  = useMemo(() => validate(form), [form]);
   const valid   = Object.keys(errors).length === 0;
@@ -230,6 +264,13 @@ export default function CreateQuotation() {
         <div className="mb-4 px-4 py-3 border border-gold-light bg-gold-pale text-gold-dark text-sm flex items-center gap-2">
           <span className="text-[10px] uppercase tracking-widest">Converting Lead</span>
           <strong>{leadBanner.code}</strong> · {leadBanner.name} — customer details prefilled.
+        </div>
+      )}
+
+      {itemBanner && (
+        <div className="mb-4 px-4 py-3 border border-amber-300 bg-amber-50 text-amber-700 text-sm flex items-center gap-2">
+          <span className="text-[10px] uppercase tracking-widest">From Inventory</span>
+          <strong>{itemBanner.sku}</strong> · {itemBanner.name} — saving this quotation reserves the piece.
         </div>
       )}
 

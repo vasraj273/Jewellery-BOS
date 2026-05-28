@@ -8,12 +8,15 @@ const BASE_NAV = [
   { to: '/quotations',       label: 'Quotation History' },
   { to: '/leads',            label: 'Leads' },
   { to: '/customers',        label: 'Customers' },
+  { to: '/inventory',        label: 'Inventory' },    // all roles (sales-exec view/quote)
   { to: '/attendance',       label: 'Attendance' },   // all roles
   { to: '/leaves',           label: 'Leaves' },       // all roles
   { to: '/tasks',            label: 'Tasks' }         // all roles
 ];
 
 const ADMIN_NAV = [
+  { to: '/suppliers',        label: 'Suppliers',   roles: ['super_admin', 'admin'] },
+  { to: '/purchases',        label: 'Purchases',   roles: ['super_admin', 'admin'] },
   { to: '/employees',        label: 'Employees',   roles: ['super_admin', 'admin'] },
   { to: '/shifts',           label: 'Shifts',      roles: ['super_admin', 'admin'] },
   { to: '/incentives',       label: 'Incentives',  roles: ['super_admin', 'admin'] },

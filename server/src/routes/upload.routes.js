@@ -38,28 +38,28 @@ const docUpload = multer({
   }
 });
 
+import { persistUpload } from '../services/storage.service.js';
+
 const router = Router();
 
-router.post('/image', upload.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
-  res.json({
-    success: true,
-    data: {
-      filename: req.file.filename,
-      url: `/uploads/${req.file.filename}`
-    }
-  });
+// Files land on disk via multer, then persistUpload promotes them to Cloudinary
+// (permanent) when credentials are configured, or returns the `/uploads/...`
+// disk path otherwise. Stored URLs may be absolute (Cloudinary) or relative
+// (disk); the client's assetUrl() resolves both correctly.
+router.post('/image', upload.single('image'), async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+    const stored = await persistUpload(req.file, { folder: 'jbos/images' });
+    res.json({ success: true, data: { filename: req.file.filename, url: stored.url, provider: stored.provider } });
+  } catch (e) { if (e.status) return res.status(e.status).json({ success: false, error: e.message }); next(e); }
 });
 
-router.post('/document', docUpload.single('file'), (req, res) => {
-  if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
-  res.json({
-    success: true,
-    data: {
-      filename: req.file.filename,
-      url: `/uploads/${req.file.filename}`
-    }
-  });
+router.post('/document', docUpload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+    const stored = await persistUpload(req.file, { folder: 'jbos/documents' });
+    res.json({ success: true, data: { filename: req.file.filename, url: stored.url, provider: stored.provider } });
+  } catch (e) { if (e.status) return res.status(e.status).json({ success: false, error: e.message }); next(e); }
 });
 
 export default router;

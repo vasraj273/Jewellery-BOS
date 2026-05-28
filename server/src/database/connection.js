@@ -267,6 +267,14 @@ async function runMigrations(tx) {
   }
   await tx.unsafe(`CREATE INDEX IF NOT EXISTS idx_quotations_source_lead ON quotations(source_lead_id)`);
 
+  // M8 — inventory linkage on quotations. ALTER-added column on an existing
+  // table, so its index is created here AFTER the ALTER (never inline in
+  // schema.sql, which is skipped on already-deployed DBs).
+  if (!qCols.includes('inventory_item_id')) {
+    await tx.unsafe(`ALTER TABLE quotations ADD COLUMN inventory_item_id bigint`);
+  }
+  await tx.unsafe(`CREATE INDEX IF NOT EXISTS idx_quotations_inventory_item ON quotations(inventory_item_id)`);
+
   // M5 fix — auto-conversion timestamp on leads
   const leadCols = await cols('leads');
   if (leadCols.length && !leadCols.includes('converted_at')) {

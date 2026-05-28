@@ -2,6 +2,7 @@ import { getDb } from '../database/connection.js';
 import { computePricing } from './pricing.service.js';
 import { generateQuoteId } from '../utils/quoteId.js';
 import { validateQuotation } from '../utils/validate.js';
+import { reserveForQuoteTx } from './inventory.service.js';
 
 /**
  * RBAC visibility scope.
@@ -225,11 +226,23 @@ export async function create(input, actor) {
     sales_executive: salesExecLabel,
     valid_till: validTill,
     notes: input.notes || '',
-    source_lead_id: input.source_lead_id ? Number(input.source_lead_id) : null
+    source_lead_id: input.source_lead_id ? Number(input.source_lead_id) : null,
+    inventory_item_id: input.inventory_item_id ? Number(input.inventory_item_id) : null
   };
 
   // postgres.js helper: sql(obj) expands to (col1, col2, ...) VALUES (val1, val2, ...)
-  await sql`INSERT INTO quotations ${sql(row)}`;
+  if (row.inventory_item_id) {
+    // M8 — raising a quote from an inventory item reserves it atomically.
+    // reserveForQuoteTx guards against double-reservation (FOR UPDATE +
+    // status check) and throws 409 if the item is no longer in stock, so the
+    // quotation is never inserted against an unavailable piece.
+    await sql.begin(async (tx) => {
+      await reserveForQuoteTx(tx, row.inventory_item_id, quoteId, actor, row.net_weight);
+      await tx`INSERT INTO quotations ${tx(row)}`;
+    });
+  } else {
+    await sql`INSERT INTO quotations ${sql(row)}`;
+  }
   // Skip scope when reading back — we know we just wrote it.
   return findByQuoteId(quoteId, null);
 }

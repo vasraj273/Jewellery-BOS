@@ -74,6 +74,16 @@ export async function create(req, res, next) {
       });
       await leads.markConvertedFromQuotation(saved.source_lead_id, saved.id, req.user).catch(() => {});
     }
+    // M8 — a quote raised from inventory reserved the item inside the create tx.
+    if (saved.inventory_item_id) {
+      audit.record({
+        actor: req.user, action: 'inventory.reserve',
+        entityType: 'inventory_item', entityId: saved.inventory_item_id,
+        metadata: { quote_id: saved.quote_id },
+        req
+      });
+    }
+
     // Log the quotation on the matching customer's timeline (by mobile).
     await customers.recordQuotationEvent(saved, req.user).catch(() => {});
 

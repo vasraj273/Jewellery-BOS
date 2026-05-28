@@ -17,6 +17,10 @@ import Tasks from './pages/Tasks.jsx';
 import Shifts from './pages/Shifts.jsx';
 import Incentives from './pages/Incentives.jsx';
 import HRCalendar from './pages/HRCalendar.jsx';
+import Inventory from './pages/Inventory.jsx';
+import InventoryDetail from './pages/InventoryDetail.jsx';
+import Suppliers from './pages/Suppliers.jsx';
+import Purchases from './pages/Purchases.jsx';
 import UsersAdmin from './pages/admin/Users.jsx';
 import SettingsAdmin from './pages/admin/Settings.jsx';
 import MastersAdmin from './pages/admin/Masters.jsx';
@@ -49,6 +53,10 @@ export const router = createBrowserRouter([
       { path: 'shifts',                   element: <RequireRole roles={ADMIN_ROLES}><Shifts /></RequireRole> },
       { path: 'incentives',               element: <Incentives /> },
       { path: 'hr-calendar',              element: <RequireRole roles={ADMIN_ROLES}><HRCalendar /></RequireRole> },
+      { path: 'inventory',                element: <Inventory /> },
+      { path: 'inventory/:id',            element: <InventoryDetail /> },
+      { path: 'suppliers',                element: <RequireRole roles={ADMIN_ROLES}><Suppliers /></RequireRole> },
+      { path: 'purchases',                element: <RequireRole roles={ADMIN_ROLES}><Purchases /></RequireRole> },
       { path: 'admin/users',      element: <RequireRole roles={ADMIN_ROLES}><UsersAdmin /></RequireRole> },
       { path: 'admin/settings',   element: <RequireRole roles={ADMIN_ROLES}><SettingsAdmin /></RequireRole> },
       { path: 'admin/masters',    element: <RequireRole roles={ADMIN_ROLES}><MastersAdmin /></RequireRole> },

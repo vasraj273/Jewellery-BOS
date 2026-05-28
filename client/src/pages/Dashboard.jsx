@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { quotationsApi, leadsApi, customersApi, remindersApi, analyticsApi, attendanceApi, leavesApi, tasksApi, incentivesApi } from '../api/client.js';
+import { quotationsApi, leadsApi, customersApi, remindersApi, analyticsApi, attendanceApi, leavesApi, tasksApi, incentivesApi, inventoryApi } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import GoldRateWidget from '../components/GoldRateWidget.jsx';
 
@@ -23,6 +23,8 @@ export default function Dashboard() {
   const [inc, setInc]       = useState({ pending_count: 0, pending_total: 0, top_earners: [] });
   const [myAtt, setMyAtt]   = useState({ status: null });
   const [myInc, setMyInc]   = useState({ total: 0, pending: 0, paid: 0 });
+  const [invSum, setInvSum] = useState(null);
+  const [invAlerts, setInvAlerts] = useState(null);
 
   useEffect(() => {
     // Scoped server-side: sales-exec receives only their own figures.
@@ -39,6 +41,8 @@ export default function Dashboard() {
       analyticsApi.sales().then(setSales).catch(() => {});
       analyticsApi.performance().then(setPerf).catch(() => {});
       incentivesApi.dashboard().then(setInc).catch(() => {});
+      inventoryApi.summary().then(setInvSum).catch(() => {});
+      inventoryApi.alerts().then(setInvAlerts).catch(() => {});
     } else {
       // Sales-exec self-scoped HR.
       attendanceApi.myToday().then(setMyAtt).catch(() => {});
@@ -92,6 +96,42 @@ export default function Dashboard() {
             <StatCard label="Completed Today"   value={tk.completed_today} to="/tasks" />
             <StatCard label="Incentive Pending" value={inr(inc.pending_total)} to="/incentives" hint={`${inc.pending_count} payout(s)`} highlight={inc.pending_count > 0} />
           </div>
+
+          {/* Inventory widgets (org-wide) */}
+          {invSum && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+              <StatCard label="In Stock"      value={invSum.by_status?.in_stock || 0} to="/inventory" />
+              <StatCard label="Reserved"      value={invSum.by_status?.reserved || 0} to="/inventory" highlight={(invSum.by_status?.reserved || 0) > 0} />
+              <StatCard label="Stock Value"   value={inr(invSum.stock_market_value)} to="/inventory" hint={`Cost ${inr(invSum.stock_cost_value)}`} />
+              <StatCard label="Dead Stock"    value={invAlerts?.dead_stock_count || 0} to="/inventory" highlight={(invAlerts?.dead_stock_count || 0) > 0} hint={`>${invAlerts?.dead_days || 90} days unsold`} />
+            </div>
+          )}
+
+          {/* Inventory alert detail */}
+          {invAlerts && (invAlerts.low_stock?.length > 0 || invAlerts.fast_movers?.length > 0) && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <div className="card border-l-4 border-l-red-400">
+                <div className="text-[10px] uppercase tracking-[2.5px] text-gold mb-2">Low Stock Categories (≤ {invAlerts.low_stock_threshold})</div>
+                {invAlerts.low_stock.length === 0 ? <p className="text-sm text-ink-muted">All categories well stocked.</p> : (
+                  <ul className="text-sm divide-y divide-gold-light/30">
+                    {invAlerts.low_stock.map((c) => (
+                      <li key={c.category} className="py-1.5 flex justify-between"><span>{c.category}</span><span className="font-medium text-red-600">{c.in_stock} in stock</span></li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="card border-l-4 border-l-gold">
+                <div className="text-[10px] uppercase tracking-[2.5px] text-gold mb-2">Fast Movers (30 days)</div>
+                {invAlerts.fast_movers.length === 0 ? <p className="text-sm text-ink-muted">No sales recorded yet.</p> : (
+                  <ul className="text-sm divide-y divide-gold-light/30">
+                    {invAlerts.fast_movers.map((c) => (
+                      <li key={c.category} className="py-1.5 flex justify-between"><span>{c.category}</span><span className="font-medium text-gold-dark">{c.sold_count} sold</span></li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <>

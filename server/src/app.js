@@ -22,6 +22,9 @@ import shiftsRoutes from './routes/shifts.routes.js';
 import tasksRoutes from './routes/tasks.routes.js';
 import incentivesRoutes from './routes/incentives.routes.js';
 import hrCalendarRoutes from './routes/hrCalendar.routes.js';
+import suppliersRoutes from './routes/suppliers.routes.js';
+import inventoryRoutes from './routes/inventory.routes.js';
+import purchasesRoutes from './routes/purchases.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { requireAuth } from './middleware/auth.middleware.js';
 
@@ -65,6 +68,10 @@ export function createApp() {
   app.use('/api/tasks',      tasksRoutes);
   app.use('/api/incentives', incentivesRoutes);
   app.use('/api/hr-calendar',hrCalendarRoutes);
+  // M8 — Inventory + Procurement
+  app.use('/api/suppliers',  suppliersRoutes);
+  app.use('/api/inventory',  inventoryRoutes);
+  app.use('/api/purchases',  purchasesRoutes);
 
   app.use(errorHandler);
 

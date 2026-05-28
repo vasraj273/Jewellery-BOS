@@ -215,3 +215,32 @@ export const uploadsApi = {
     }).then(r => r.data.data);
   }
 };
+
+// ── M8 — Inventory + Procurement ──────────────────────────────
+export const inventoryApi = {
+  list:      (params = {}) => api.get('/inventory', { params }).then(r => r.data.data),
+  get:       (id)          => api.get(`/inventory/${id}`).then(r => r.data.data),
+  create:    (payload)     => api.post('/inventory', payload).then(r => r.data.data),
+  update:    (id, payload) => api.put(`/inventory/${id}`, payload).then(r => r.data.data),
+  archive:   (id)          => api.delete(`/inventory/${id}`).then(r => r.data.data),
+  movement:  (id, payload) => api.post(`/inventory/${id}/movement`, payload).then(r => r.data.data),
+  reserve:   (id, payload) => api.post(`/inventory/${id}/reserve`, payload).then(r => r.data.data),
+  release:   (id)          => api.post(`/inventory/${id}/release`).then(r => r.data.data),
+  sell:      (id, payload) => api.post(`/inventory/${id}/sell`, payload).then(r => r.data.data),
+  summary:   ()            => api.get('/inventory/summary').then(r => r.data.data),
+  alerts:    (params = {}) => api.get('/inventory/alerts', { params }).then(r => r.data.data)
+};
+
+export const suppliersApi = {
+  list:       (params = {}) => api.get('/suppliers', { params }).then(r => r.data.data),
+  get:        (id)          => api.get(`/suppliers/${id}`).then(r => r.data.data),
+  create:     (payload)     => api.post('/suppliers', payload).then(r => r.data.data),
+  update:     (id, payload) => api.put(`/suppliers/${id}`, payload).then(r => r.data.data),
+  deactivate: (id)          => api.delete(`/suppliers/${id}`).then(r => r.data.data)
+};
+
+export const purchasesApi = {
+  list:   (params = {}) => api.get('/purchases', { params }).then(r => r.data.data),
+  get:    (id)          => api.get(`/purchases/${id}`).then(r => r.data.data),
+  create: (payload)     => api.post('/purchases', payload).then(r => r.data.data)
+};
