@@ -9,6 +9,9 @@ import Leads from './pages/Leads.jsx';
 import LeadDetail from './pages/LeadDetail.jsx';
 import Customers from './pages/Customers.jsx';
 import CustomerDetail from './pages/CustomerDetail.jsx';
+import Employees from './pages/Employees.jsx';
+import Attendance from './pages/Attendance.jsx';
+import LeavesPage from './pages/Leaves.jsx';
 import UsersAdmin from './pages/admin/Users.jsx';
 import SettingsAdmin from './pages/admin/Settings.jsx';
 import MastersAdmin from './pages/admin/Masters.jsx';
@@ -33,6 +36,9 @@ export const router = createBrowserRouter([
       { path: 'leads/:id',                element: <LeadDetail /> },
       { path: 'customers',                element: <Customers /> },
       { path: 'customers/:id',            element: <CustomerDetail /> },
+      { path: 'employees',                element: <RequireRole roles={ADMIN_ROLES}><Employees /></RequireRole> },
+      { path: 'attendance',               element: <Attendance /> },
+      { path: 'leaves',                   element: <LeavesPage /> },
       { path: 'admin/users',      element: <RequireRole roles={ADMIN_ROLES}><UsersAdmin /></RequireRole> },
       { path: 'admin/settings',   element: <RequireRole roles={ADMIN_ROLES}><SettingsAdmin /></RequireRole> },
       { path: 'admin/masters',    element: <RequireRole roles={ADMIN_ROLES}><MastersAdmin /></RequireRole> },

@@ -120,8 +120,31 @@ export const remindersApi = {
 };
 
 export const analyticsApi = {
-  sales:      () => api.get('/analytics/sales').then(r => r.data.data),
-  conversion: () => api.get('/analytics/conversion').then(r => r.data.data)
+  sales:       () => api.get('/analytics/sales').then(r => r.data.data),
+  conversion:  () => api.get('/analytics/conversion').then(r => r.data.data),
+  performance: (params = {}) => api.get('/analytics/performance', { params }).then(r => r.data.data)
+};
+
+export const employeesApi = {
+  list:       (params = {}) => api.get('/employees', { params }).then(r => r.data.data),
+  get:        (id)          => api.get(`/employees/${id}`).then(r => r.data.data),
+  create:     (payload)     => api.post('/employees', payload).then(r => r.data.data),
+  update:     (id, payload) => api.put(`/employees/${id}`, payload).then(r => r.data.data),
+  deactivate: (id)          => api.delete(`/employees/${id}`).then(r => r.data.data)
+};
+
+export const attendanceApi = {
+  list:  (params = {}) => api.get('/attendance', { params }).then(r => r.data.data),
+  mark:  (payload)     => api.post('/attendance', payload).then(r => r.data.data),
+  edit:  (id, payload) => api.put(`/attendance/${id}`, payload).then(r => r.data.data),
+  today: ()            => api.get('/attendance/today').then(r => r.data.data)
+};
+
+export const leavesApi = {
+  list:      (params = {}) => api.get('/leaves', { params }).then(r => r.data.data),
+  request:   (payload)     => api.post('/leaves', payload).then(r => r.data.data),
+  decide:    (id, status)  => api.put(`/leaves/${id}`, { status }).then(r => r.data.data),
+  dashboard: ()            => api.get('/leaves/dashboard').then(r => r.data.data)
 };
 
 export const uploadsApi = {

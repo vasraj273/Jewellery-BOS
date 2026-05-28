@@ -15,6 +15,9 @@ import leadsRoutes from './routes/leads.routes.js';
 import customersRoutes from './routes/customers.routes.js';
 import remindersRoutes from './routes/reminders.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
+import employeesRoutes from './routes/employees.routes.js';
+import attendanceRoutes from './routes/attendance.routes.js';
+import leavesRoutes from './routes/leaves.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { requireAuth } from './middleware/auth.middleware.js';
 
@@ -51,6 +54,9 @@ export function createApp() {
   app.use('/api/customers',  customersRoutes);
   app.use('/api/reminders',  remindersRoutes);
   app.use('/api/analytics',  analyticsRoutes);
+  app.use('/api/employees',  employeesRoutes);
+  app.use('/api/attendance', attendanceRoutes);
+  app.use('/api/leaves',     leavesRoutes);
 
   app.use(errorHandler);
 

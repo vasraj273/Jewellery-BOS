@@ -52,7 +52,37 @@ export async function initDatabase() {
   console.log('[JBOS] Postgres ready');
   await autoBootstrapAdmin();
   await autoSeedMasters();
+  await autoSeedEmployees();
   return sql;
+}
+
+/**
+ * Ensure every user has a linked employee record (one profile per user).
+ * Idempotent — only inserts for users that don't yet have an employee row.
+ */
+async function autoSeedEmployees() {
+  const missing = await sql`
+    SELECT u.id, u.full_name, u.email, u.role
+    FROM users u
+    LEFT JOIN employees e ON e.user_id = u.id
+    WHERE e.id IS NULL
+  `;
+  if (missing.length === 0) return;
+
+  const year = new Date().getFullYear();
+  // Seed sequence from the current max EMP-<year> code.
+  const [{ n }] = await sql`SELECT count(*)::int AS n FROM employees WHERE employee_code LIKE ${`EMP-${year}-%`}`;
+  let seq = n;
+  for (const u of missing) {
+    seq += 1;
+    const code = `EMP-${year}-${String(seq).padStart(4, '0')}`;
+    await sql`
+      INSERT INTO employees (employee_code, user_id, full_name, email, role, employment_status)
+      VALUES (${code}, ${u.id}, ${u.full_name}, ${u.email}, ${u.role}, 'active')
+      ON CONFLICT (user_id) DO NOTHING
+    `;
+  }
+  console.log(`[JBOS] Auto-seeded ${missing.length} employee record(s) from users.`);
 }
 
 /**

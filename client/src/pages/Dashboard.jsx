@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { quotationsApi, leadsApi, customersApi, remindersApi, analyticsApi } from '../api/client.js';
+import { quotationsApi, leadsApi, customersApi, remindersApi, analyticsApi, attendanceApi, leavesApi } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import GoldRateWidget from '../components/GoldRateWidget.jsx';
 
@@ -16,15 +16,21 @@ export default function Dashboard() {
   const [rem, setRem]       = useState({ overdue: 0, today: 0, upcoming: 0, due: 0 });
   const [conv, setConv]     = useState({ conversion_pct: 0, converted: 0, total: 0 });
   const [sales, setSales]   = useState([]);
+  const [att, setAtt]       = useState({ present: 0, absent: 0, leave: 0, half_day: 0 });
+  const [lv, setLv]         = useState({ pending_approvals: 0, leaves_today: 0 });
+  const [perf, setPerf]     = useState([]);
 
   useEffect(() => {
     quotationsApi.list().then((r) => setStats({ total: r.length, recent: r.slice(0, 5) })).catch(() => {});
     leadsApi.stats().then(setCrm).catch(() => {});
     customersApi.stats().then(setCust).catch(() => {});
     remindersApi.dashboard().then(setRem).catch(() => {});
+    attendanceApi.today().then(setAtt).catch(() => {});
+    leavesApi.dashboard().then(setLv).catch(() => {});
     if (isAdminTier) {
       analyticsApi.conversion().then(setConv).catch(() => {});
       analyticsApi.sales().then(setSales).catch(() => {});
+      analyticsApi.performance().then(setPerf).catch(() => {});
     }
   }, [isAdminTier]);
 
@@ -53,6 +59,15 @@ export default function Dashboard() {
         <StatCard label="Due Reminders"    value={rem.due}     to="/customers" highlight={rem.overdue > 0}
                   hint={rem.overdue > 0 ? `${rem.overdue} overdue · ${rem.today} today` : `${rem.today} today · ${rem.upcoming} upcoming`} />
         <StatCard label="Total Quotations" value={stats.total} to="/quotations" />
+      </div>
+
+      {/* HRMS widgets */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-6">
+        <StatCard label="Present Today"     value={att.present} to="/attendance" />
+        <StatCard label="Absent Today"      value={att.absent}  to="/attendance" highlight={att.absent > 0} />
+        <StatCard label="On Leave Today"    value={lv.leaves_today} to="/leaves" />
+        <StatCard label="Pending Approvals" value={lv.pending_approvals} to="/leaves" highlight={lv.pending_approvals > 0} />
+        <StatCard label="Half Day"          value={att.half_day} to="/attendance" />
       </div>
 
       {/* Admin KPI */}
@@ -91,6 +106,47 @@ export default function Dashboard() {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Employee Performance (HR insight) */}
+      {isAdminTier && (
+        <div className="card p-0 overflow-hidden mb-6">
+          <div className="bg-ink text-gold px-4 py-3 text-[10px] uppercase tracking-widest">Employee Performance</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-[10px] uppercase tracking-widest text-ink-muted border-b border-gold-light/40">
+                <tr>
+                  <th className="px-4 py-2 text-left">Employee</th>
+                  <th className="px-4 py-2 text-right">Quotes</th>
+                  <th className="px-4 py-2 text-right">Leads</th>
+                  <th className="px-4 py-2 text-right">Converted</th>
+                  <th className="px-4 py-2 text-right">Customers</th>
+                  <th className="px-4 py-2 text-right">Conv %</th>
+                  <th className="px-4 py-2 text-right">Reminders</th>
+                  <th className="px-4 py-2 text-right">Attendance %</th>
+                  <th className="px-4 py-2 text-right">Leaves</th>
+                </tr>
+              </thead>
+              <tbody>
+                {perf.length === 0 ? (
+                  <tr><td colSpan="9" className="px-4 py-4 text-center text-ink-muted">No data yet.</td></tr>
+                ) : perf.map((p) => (
+                  <tr key={p.employee_id} className="border-b border-gold-light/20 last:border-0">
+                    <td className="px-4 py-2">{p.full_name}</td>
+                    <td className="px-4 py-2 text-right">{p.quotations}</td>
+                    <td className="px-4 py-2 text-right">{p.leads}</td>
+                    <td className="px-4 py-2 text-right">{p.converted}</td>
+                    <td className="px-4 py-2 text-right">{p.customers}</td>
+                    <td className="px-4 py-2 text-right font-medium text-gold-dark">{p.conversion_pct}%</td>
+                    <td className="px-4 py-2 text-right">{p.reminders_done}</td>
+                    <td className="px-4 py-2 text-right">{p.attendance_pct}%</td>
+                    <td className="px-4 py-2 text-right">{p.leave_count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

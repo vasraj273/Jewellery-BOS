@@ -14,4 +14,8 @@ router.get('/conversion', async (_req, res, next) => {
   try { res.json({ success: true, data: await analytics.conversionRate() }); } catch (e) { next(e); }
 });
 
+router.get('/performance', async (req, res, next) => {
+  try { res.json({ success: true, data: await analytics.employeePerformance(req.query || {}) }); } catch (e) { next(e); }
+});
+
 export default router;

@@ -7,10 +7,13 @@ const BASE_NAV = [
   { to: '/quotations/new',   label: 'Create Quotation' },
   { to: '/quotations',       label: 'Quotation History' },
   { to: '/leads',            label: 'Leads' },
-  { to: '/customers',        label: 'Customers' }
+  { to: '/customers',        label: 'Customers' },
+  { to: '/attendance',       label: 'Attendance' },   // all roles
+  { to: '/leaves',           label: 'Leaves' }        // all roles
 ];
 
 const ADMIN_NAV = [
+  { to: '/employees',        label: 'Employees',   roles: ['super_admin', 'admin'] },
   { to: '/admin/users',      label: 'Users',       roles: ['super_admin', 'admin'] },
   { to: '/admin/settings',   label: 'Settings',    roles: ['super_admin', 'admin'] },
   { to: '/admin/masters',    label: 'Masters',     roles: ['super_admin', 'admin'] },
