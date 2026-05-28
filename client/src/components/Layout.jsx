@@ -6,7 +6,8 @@ const BASE_NAV = [
   { to: '/dashboard',        label: 'Dashboard' },
   { to: '/quotations/new',   label: 'Create Quotation' },
   { to: '/quotations',       label: 'Quotation History' },
-  { to: '/leads',            label: 'Leads' }
+  { to: '/leads',            label: 'Leads' },
+  { to: '/customers',        label: 'Customers' }
 ];
 
 const ADMIN_NAV = [

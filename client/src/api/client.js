@@ -103,6 +103,27 @@ export const leadsApi = {
   statuses:    ()                   => api.get('/leads/statuses').then(r => r.data.data)
 };
 
+export const customersApi = {
+  list:      (params = {})   => api.get('/customers', { params }).then(r => r.data.data),
+  get:       (id)            => api.get(`/customers/${id}`).then(r => r.data.data),
+  update:    (id, payload)   => api.put(`/customers/${id}`, payload).then(r => r.data.data),
+  events:    (id)            => api.get(`/customers/${id}/events`).then(r => r.data.data),
+  addEvent:  (id, payload)   => api.post(`/customers/${id}/events`, payload).then(r => r.data.data),
+  addReminder: (id, payload) => api.post(`/customers/${id}/reminders`, payload).then(r => r.data.data),
+  stats:     ()              => api.get('/customers/stats').then(r => r.data.data)
+};
+
+export const remindersApi = {
+  list:      (params = {})   => api.get('/reminders', { params }).then(r => r.data.data),
+  dashboard: ()              => api.get('/reminders/dashboard').then(r => r.data.data),
+  markDone:  (id)            => api.put(`/reminders/${id}`, { status: 'done' }).then(r => r.data.data)
+};
+
+export const analyticsApi = {
+  sales:      () => api.get('/analytics/sales').then(r => r.data.data),
+  conversion: () => api.get('/analytics/conversion').then(r => r.data.data)
+};
+
 export const uploadsApi = {
   image: (file) => {
     const fd = new FormData();

@@ -1,5 +1,7 @@
 import { getDb } from '../database/connection.js';
 import { generateLeadCode } from '../utils/leadCode.js';
+import * as customers from './customers.service.js';
+import * as audit from './audit.service.js';
 
 const PRIORITIES = ['low', 'medium', 'high'];
 
@@ -184,11 +186,28 @@ export async function update(id, patch, actor) {
     }
   }
 
-  if (Object.keys(fields).length === 0) return { lead: await findById(id, null), reassigned };
+  // Detect a transition into the 'converted' terminal status this update.
+  const becameConverted = fields.is_converted === true && !current.is_converted;
+
+  if (Object.keys(fields).length === 0) return { lead: await findById(id, null), reassigned, converted: false };
 
   const cols = Object.keys(fields);
   await sql`UPDATE leads SET ${sql(fields, ...cols)}, updated_at = now() WHERE id = ${id}`;
-  return { lead: await findById(id, null), reassigned };
+
+  let converted = false;
+  if (becameConverted) {
+    const fresh = await getRaw(id);
+    const { created } = await customers.ensureFromLead(fresh, actor);
+    converted = true;
+    audit.record({
+      actor, action: 'lead.converted',
+      entityType: 'lead', entityId: id,
+      metadata: { customer_created: created, mobile: fresh.mobile },
+      req: null
+    });
+  }
+
+  return { lead: await findById(id, null), reassigned, converted };
 }
 
 export async function listFollowups(leadId, actor) {

@@ -7,6 +7,8 @@ import QuotationPreview from './pages/QuotationPreview.jsx';
 import Login from './pages/Login.jsx';
 import Leads from './pages/Leads.jsx';
 import LeadDetail from './pages/LeadDetail.jsx';
+import Customers from './pages/Customers.jsx';
+import CustomerDetail from './pages/CustomerDetail.jsx';
 import UsersAdmin from './pages/admin/Users.jsx';
 import SettingsAdmin from './pages/admin/Settings.jsx';
 import MastersAdmin from './pages/admin/Masters.jsx';
@@ -29,6 +31,8 @@ export const router = createBrowserRouter([
       { path: 'quotations/:quoteId',      element: <QuotationPreview /> },
       { path: 'leads',                    element: <Leads /> },
       { path: 'leads/:id',                element: <LeadDetail /> },
+      { path: 'customers',                element: <Customers /> },
+      { path: 'customers/:id',            element: <CustomerDetail /> },
       { path: 'admin/users',      element: <RequireRole roles={ADMIN_ROLES}><UsersAdmin /></RequireRole> },
       { path: 'admin/settings',   element: <RequireRole roles={ADMIN_ROLES}><SettingsAdmin /></RequireRole> },
       { path: 'admin/masters',    element: <RequireRole roles={ADMIN_ROLES}><MastersAdmin /></RequireRole> },
