@@ -68,22 +68,32 @@ export async function persistUpload(file, { folder = 'jbos' } = {}) {
   if (isCloudEnabled()) {
     try {
       const cloudinary = await getCloudinary();
-      // Images deliver fine as `image`. PDFs/other docs MUST go up as `raw`:
-      // resource_type:'auto' classifies a PDF as an `image`, whose delivery is
-      // gated behind the account-level "allow PDF/ZIP delivery" flag and
-      // otherwise 401s with "Failed to load PDF document". `raw` serves the
-      // original bytes (extension preserved) with no account toggle needed.
+      // Images deliver fine as `image`. PDFs/other docs go up as `raw` (original
+      // bytes, extension preserved).
       const isImage = /^image\//.test(file.mimetype || '');
+      const resourceType = isImage ? 'image' : 'raw';
       const result = await cloudinary.uploader.upload(file.path, {
         folder,
-        resource_type: isImage ? 'image' : 'raw',
+        resource_type: resourceType,
+        type: 'upload',
+        // Force a publicly-deliverable asset, overriding any account/upload-preset
+        // default of authenticated/private access that otherwise 401s on delivery.
+        access_mode: 'public',
         use_filename: true,
         unique_filename: true,
         overwrite: false
       });
       // Local temp no longer needed once it lives in Cloudinary.
       fs.promises.unlink(file.path).catch(() => {});
-      return { url: result.secure_url, provider: 'cloudinary', public_id: result.public_id };
+
+      // Raw assets (PDFs/docs) 401 on accounts with restricted-media delivery
+      // even when the asset is public. A signed delivery URL is honoured in both
+      // public and restricted setups and never triggers an auth prompt; it does
+      // not expire. Images deliver fine unsigned, so keep their plain secure_url.
+      const url = isImage
+        ? result.secure_url
+        : cloudinary.url(result.public_id, { resource_type: 'raw', type: 'upload', secure: true, sign_url: true });
+      return { url, provider: 'cloudinary', public_id: result.public_id };
     } catch (err) {
       console.warn(`[storage] Cloudinary upload failed, falling back to disk: ${err.message}`);
       // fall through to disk
