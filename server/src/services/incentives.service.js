@@ -74,6 +74,21 @@ export async function setStatus(id, status, actor) {
   return row;
 }
 
+/** Self summary for a sales-exec dashboard: their own total / pending / paid. */
+export async function mySummary(actor) {
+  const sql = getDb();
+  const emp = await employees.ensureForUser(actor);
+  const empId = emp?.id ?? -1;
+  const [r] = await sql`
+    SELECT
+      COALESCE(sum(COALESCE(amount, fixed_amount, 0)), 0)::numeric AS total,
+      COALESCE(sum(COALESCE(amount, fixed_amount, 0)) FILTER (WHERE status IN ('draft','approved')), 0)::numeric AS pending,
+      COALESCE(sum(COALESCE(amount, fixed_amount, 0)) FILTER (WHERE status = 'paid'), 0)::numeric AS paid
+    FROM incentives WHERE employee_id = ${empId}
+  `;
+  return { total: Number(r.total), pending: Number(r.pending), paid: Number(r.paid) };
+}
+
 /** Dashboard: count + sum of incentives not yet paid; top earners (paid). */
 export async function dashboard() {
   const sql = getDb();

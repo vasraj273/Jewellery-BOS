@@ -77,7 +77,9 @@ export default function Shifts() {
                   <td className="px-4 py-3 text-ink-muted text-xs">Off: {s.weekly_off || '—'}</td>
                   <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                     <button onClick={() => { setEditing(s.id); setForm({ shift_name: s.shift_name, start_time: s.start_time || '', end_time: s.end_time || '', weekly_off: s.weekly_off || '' }); }} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Edit</button>
-                    {s.is_active && <button onClick={async () => { await shiftsApi.deactivate(s.id); flash('ok', 'Deactivated'); reload(); }} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Off</button>}
+                    {s.is_active
+                      ? <button onClick={async () => { try { await shiftsApi.deactivate(s.id); flash('ok', 'Deactivated'); reload(); } catch (err) { flash('err', err?.response?.data?.error || err.message); } }} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Off</button>
+                      : <button onClick={async () => { try { await shiftsApi.activate(s.id); flash('ok', 'Reactivated'); reload(); } catch (err) { flash('err', err?.response?.data?.error || err.message); } }} className="text-xs uppercase tracking-widest text-green-700 hover:text-green-800">On</button>}
                   </td>
                 </tr>
               ))}

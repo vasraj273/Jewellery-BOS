@@ -146,6 +146,7 @@ function EmployeeModal({ employee, users, managers, onClose, onSaved, onError })
     department: employee?.department || '',
     designation: employee?.designation || '',
     joining_date: employee?.joining_date ? employee.joining_date.slice(0, 10) : '',
+    birthday: employee?.birthday ? employee.birthday.slice(0, 10) : '',
     reporting_manager_id: employee?.reporting_manager_id || '',
     employment_status: employee?.employment_status || 'active',
     emergency_contact: employee?.emergency_contact || '',
@@ -190,6 +191,7 @@ function EmployeeModal({ employee, users, managers, onClose, onSaved, onError })
             <F label="Department"><input className="input" value={form.department} onChange={(e) => set('department', e.target.value)} /></F>
             <F label="Designation"><input className="input" value={form.designation} onChange={(e) => set('designation', e.target.value)} /></F>
             <F label="Joining Date"><input className="input" type="date" value={form.joining_date} onChange={(e) => set('joining_date', e.target.value)} /></F>
+            <F label="Birthday"><input className="input" type="date" value={form.birthday} onChange={(e) => set('birthday', e.target.value)} /></F>
             <F label="Reporting Manager">
               <select className="input" value={form.reporting_manager_id} onChange={(e) => set('reporting_manager_id', e.target.value)}>
                 <option value="">— none —</option>

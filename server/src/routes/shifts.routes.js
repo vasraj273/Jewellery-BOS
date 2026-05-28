@@ -35,6 +35,14 @@ router.delete('/:id', async (req, res, next) => {
   } catch (e) { if (e.status) return res.status(e.status).json({ success: false, error: e.message }); next(e); }
 });
 
+router.put('/:id/activate', async (req, res, next) => {
+  try {
+    const row = await shifts.activate(req.params.id);
+    audit.record({ actor: req.user, action: 'shift.activate', entityType: 'shift', entityId: req.params.id, req });
+    res.json({ success: true, data: row });
+  } catch (e) { if (e.status) return res.status(e.status).json({ success: false, error: e.message }); next(e); }
+});
+
 router.put('/assign/:employeeId', async (req, res, next) => {
   try {
     const row = await shifts.assignToEmployee(req.params.employeeId, req.body?.shift_id);

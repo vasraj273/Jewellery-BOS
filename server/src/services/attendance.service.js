@@ -81,7 +81,19 @@ export async function edit(id, patch, actor) {
   return row;
 }
 
-/** Today's present / absent / leave counts (whole org; dashboard). */
+/** The acting user's own attendance status for today (sales-exec dashboard). */
+export async function myToday(actor) {
+  const sql = getDb();
+  const emp = await employees.ensureForUser(actor);
+  const empId = emp?.id ?? -1;
+  const [row] = await sql`
+    SELECT status, check_in_time, check_out_time
+    FROM attendance WHERE employee_id = ${empId} AND attendance_date = current_date LIMIT 1
+  `;
+  return { status: row?.status || null, check_in_time: row?.check_in_time || null, check_out_time: row?.check_out_time || null };
+}
+
+/** Today's present / absent / leave counts (whole org; admin dashboard). */
 export async function todayStats() {
   const sql = getDb();
   const [r] = await sql`

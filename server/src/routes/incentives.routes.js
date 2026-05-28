@@ -12,6 +12,11 @@ router.get('/dashboard', requireAdmin, async (_req, res, next) => {
   try { res.json({ success: true, data: await incentives.dashboard() }); } catch (e) { next(e); }
 });
 
+// Self summary — any authenticated user (scoped to their own employee record).
+router.get('/my-summary', async (req, res, next) => {
+  try { res.json({ success: true, data: await incentives.mySummary(req.user) }); } catch (e) { next(e); }
+});
+
 // List — sales-exec sees own; admin sees all/filtered (scope inside service).
 router.get('/', async (req, res, next) => {
   try { res.json({ success: true, data: await incentives.list(req.user, req.query || {}) }); } catch (e) { next(e); }

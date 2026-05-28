@@ -39,6 +39,10 @@ export async function deactivate(id) {
   return update(id, { is_active: false });
 }
 
+export async function activate(id) {
+  return update(id, { is_active: true });
+}
+
 /** Assign (or clear) an employee's active shift. One active shift per employee. */
 export async function assignToEmployee(employeeId, shiftId) {
   const sql = getDb();

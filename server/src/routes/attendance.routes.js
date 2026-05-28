@@ -2,12 +2,19 @@ import { Router } from 'express';
 import * as attendance from '../services/attendance.service.js';
 import * as audit from '../services/audit.service.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
+import { requireAdmin } from '../middleware/roles.middleware.js';
 
 const router = Router();
 router.use(requireAuth);
 
-router.get('/today', async (_req, res, next) => {
+// Org-wide today counts — admin/super-admin only (HR visibility).
+router.get('/today', requireAdmin, async (_req, res, next) => {
   try { res.json({ success: true, data: await attendance.todayStats() }); } catch (e) { next(e); }
+});
+
+// The acting user's own status for today — any authenticated user.
+router.get('/my-today', async (req, res, next) => {
+  try { res.json({ success: true, data: await attendance.myToday(req.user) }); } catch (e) { next(e); }
 });
 
 router.get('/', async (req, res, next) => {

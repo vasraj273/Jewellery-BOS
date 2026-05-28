@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { employeesApi, shiftsApi, docUploadApi } from '../api/client.js';
+import { employeesApi, shiftsApi, docUploadApi, assetUrl } from '../api/client.js';
 
 const SALARY_TYPES = [
   { value: 'monthly', label: 'Monthly' },
@@ -51,6 +51,7 @@ export default function EmployeeDetail() {
           <Row k="Department" v={emp.department || '—'} />
           <Row k="Designation" v={emp.designation || '—'} />
           <Row k="Manager" v={emp.manager_name || '—'} />
+          <Row k="Birthday" v={emp.birthday ? new Date(emp.birthday).toLocaleDateString('en-IN') : '—'} />
           <Row k="Status" v={(emp.employment_status || '').replace('_', ' ')} />
           <Row k="Shift" v={shifts.find((s) => s.id === emp.assigned_shift_id)?.shift_name || '—'} />
         </div>
@@ -160,7 +161,7 @@ function DocumentsCard({ employeeId, docs, onChanged, onError, flash, categories
           <tbody>
             {docs.map((d) => (
               <tr key={d.id} className="border-b border-gold-light/20">
-                <td className="py-2"><a href={d.upload_url} target="_blank" rel="noreferrer" className="text-gold-dark hover:text-gold">{d.document_name}</a></td>
+                <td className="py-2"><a href={assetUrl(d.upload_url)} target="_blank" rel="noreferrer" className="text-gold-dark hover:text-gold">{d.document_name}</a></td>
                 <td className="py-2 text-ink-muted text-xs">{d.category}</td>
                 <td className="py-2 text-right">
                   <button onClick={async () => { await employeesApi.removeDoc(d.id); flash('ok', 'Document removed'); onChanged(); }} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Remove</button>

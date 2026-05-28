@@ -21,22 +21,32 @@ export default function Dashboard() {
   const [perf, setPerf]     = useState([]);
   const [tk, setTk]         = useState({ pending: 0, overdue: 0, completed_today: 0 });
   const [inc, setInc]       = useState({ pending_count: 0, pending_total: 0, top_earners: [] });
+  const [myAtt, setMyAtt]   = useState({ status: null });
+  const [myInc, setMyInc]   = useState({ total: 0, pending: 0, paid: 0 });
 
   useEffect(() => {
+    // Scoped server-side: sales-exec receives only their own figures.
     quotationsApi.list().then((r) => setStats({ total: r.length, recent: r.slice(0, 5) })).catch(() => {});
     leadsApi.stats().then(setCrm).catch(() => {});
     customersApi.stats().then(setCust).catch(() => {});
     remindersApi.dashboard().then(setRem).catch(() => {});
-    attendanceApi.today().then(setAtt).catch(() => {});
     leavesApi.dashboard().then(setLv).catch(() => {});
     tasksApi.dashboard().then(setTk).catch(() => {});
     if (isAdminTier) {
+      // Org-wide HR + analytics — admin/super only (also gated server-side).
+      attendanceApi.today().then(setAtt).catch(() => {});
       analyticsApi.conversion().then(setConv).catch(() => {});
       analyticsApi.sales().then(setSales).catch(() => {});
       analyticsApi.performance().then(setPerf).catch(() => {});
       incentivesApi.dashboard().then(setInc).catch(() => {});
+    } else {
+      // Sales-exec self-scoped HR.
+      attendanceApi.myToday().then(setMyAtt).catch(() => {});
+      incentivesApi.mySummary().then(setMyInc).catch(() => {});
     }
   }, [isAdminTier]);
+
+  const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
 
   return (
     <div>
@@ -48,40 +58,69 @@ export default function Dashboard() {
         <Link to="/quotations/new" className="btn-primary self-start sm:self-auto">+ New Quotation</Link>
       </div>
 
-      {/* CRM widgets */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
-        <StatCard label="Total Leads"      value={crm.total}         to="/leads" />
-        <StatCard label="Due Followups"    value={crm.due_followups} to="/leads" highlight={crm.due_followups > 0} />
-        <StatCard label="Converted Leads"  value={crm.converted}     to="/leads" />
-        <StatCard label="Lost Leads"       value={crm.lost}          to="/leads" />
-      </div>
+      {isAdminTier ? (
+        <>
+          {/* CRM widgets (org-wide) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+            <StatCard label="Total Leads"      value={crm.total}         to="/leads" />
+            <StatCard label="Due Followups"    value={crm.due_followups} to="/leads" highlight={crm.due_followups > 0} />
+            <StatCard label="Converted Leads"  value={crm.converted}     to="/leads" />
+            <StatCard label="Lost Leads"       value={crm.lost}          to="/leads" />
+          </div>
 
-      {/* Relationship widgets */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
-        <StatCard label="Total Customers"  value={cust.total}  to="/customers" />
-        <StatCard label="Repeat Customers" value={cust.repeat} to="/customers" />
-        <StatCard label="Due Reminders"    value={rem.due}     to="/customers" highlight={rem.overdue > 0}
-                  hint={rem.overdue > 0 ? `${rem.overdue} overdue · ${rem.today} today` : `${rem.today} today · ${rem.upcoming} upcoming`} />
-        <StatCard label="Total Quotations" value={stats.total} to="/quotations" />
-      </div>
+          {/* Relationship widgets */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+            <StatCard label="Total Customers"  value={cust.total}  to="/customers" />
+            <StatCard label="Repeat Customers" value={cust.repeat} to="/customers" />
+            <StatCard label="Due Reminders"    value={rem.due}     to="/customers" highlight={rem.overdue > 0}
+                      hint={rem.overdue > 0 ? `${rem.overdue} overdue · ${rem.today} today` : `${rem.today} today · ${rem.upcoming} upcoming`} />
+            <StatCard label="Total Quotations" value={stats.total} to="/quotations" />
+          </div>
 
-      {/* HRMS widgets */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
-        <StatCard label="Present Today"     value={att.present} to="/attendance" />
-        <StatCard label="Absent Today"      value={att.absent}  to="/attendance" highlight={att.absent > 0} />
-        <StatCard label="On Leave Today"    value={lv.leaves_today} to="/leaves" />
-        <StatCard label="Pending Approvals" value={lv.pending_approvals} to="/leaves" highlight={lv.pending_approvals > 0} />
-      </div>
+          {/* HRMS widgets (team-wide) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+            <StatCard label="Present Today"     value={att.present} to="/attendance" />
+            <StatCard label="Absent Today"      value={att.absent}  to="/attendance" highlight={att.absent > 0} />
+            <StatCard label="On Leave Today"    value={lv.leaves_today} to="/leaves" />
+            <StatCard label="Pending Approvals" value={lv.pending_approvals} to="/leaves" highlight={lv.pending_approvals > 0} />
+          </div>
 
-      {/* Tasks + incentives widgets */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
-        <StatCard label="Pending Tasks"     value={tk.pending}         to="/tasks" />
-        <StatCard label="Overdue Tasks"     value={tk.overdue}         to="/tasks" highlight={tk.overdue > 0} />
-        <StatCard label="Completed Today"   value={tk.completed_today} to="/tasks" />
-        {isAdminTier && (
-          <StatCard label="Incentive Pending" value={`₹${(inc.pending_total || 0).toLocaleString('en-IN')}`} to="/incentives" hint={`${inc.pending_count} payout(s)`} highlight={inc.pending_count > 0} />
-        )}
-      </div>
+          {/* Tasks + incentives widgets */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+            <StatCard label="Pending Tasks"     value={tk.pending}         to="/tasks" />
+            <StatCard label="Overdue Tasks"     value={tk.overdue}         to="/tasks" highlight={tk.overdue > 0} />
+            <StatCard label="Completed Today"   value={tk.completed_today} to="/tasks" />
+            <StatCard label="Incentive Pending" value={inr(inc.pending_total)} to="/incentives" hint={`${inc.pending_count} payout(s)`} highlight={inc.pending_count > 0} />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* My CRM (self-scoped) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+            <StatCard label="My Leads"        value={crm.total}         to="/leads" />
+            <StatCard label="My Followups"    value={crm.due_followups} to="/leads" highlight={crm.due_followups > 0} />
+            <StatCard label="My Customers"    value={cust.total}        to="/customers" />
+            <StatCard label="My Quotations"   value={stats.total}       to="/quotations" />
+          </div>
+
+          {/* My work */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+            <StatCard label="My Reminders"      value={rem.due}            to="/customers" highlight={rem.overdue > 0}
+                      hint={rem.overdue > 0 ? `${rem.overdue} overdue · ${rem.today} today` : `${rem.today} today · ${rem.upcoming} upcoming`} />
+            <StatCard label="My Pending Tasks"  value={tk.pending}         to="/tasks" />
+            <StatCard label="My Overdue Tasks"  value={tk.overdue}         to="/tasks" highlight={tk.overdue > 0} />
+            <StatCard label="My Completed Today" value={tk.completed_today} to="/tasks" />
+          </div>
+
+          {/* My HR (self only) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+            <StatCard label="My Attendance Today" value={myAtt.status ? myAtt.status.replace('_', ' ') : 'Not marked'} to="/attendance" highlight={!myAtt.status} />
+            <StatCard label="My Leave Status"     value={lv.pending_approvals} to="/leaves" highlight={lv.pending_approvals > 0}
+                      hint={lv.leaves_today > 0 ? 'On leave today' : 'pending request(s)'} />
+            <StatCard label="My Incentives"       value={inr(myInc.total)} to="/incentives" hint={`${inr(myInc.pending)} pending · ${inr(myInc.paid)} paid`} />
+          </div>
+        </>
+      )}
 
       {/* Admin KPI */}
       {isAdminTier && (

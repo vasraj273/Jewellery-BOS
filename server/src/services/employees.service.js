@@ -68,6 +68,7 @@ export async function create(input) {
     department:          input.department?.trim() || null,
     designation:         input.designation?.trim() || null,
     joining_date:        input.joining_date || null,
+    birthday:            input.birthday || null,
     reporting_manager_id: input.reporting_manager_id ? Number(input.reporting_manager_id) : null,
     employment_status:   EMPLOYMENT.includes(input.employment_status) ? input.employment_status : 'active',
     emergency_contact:   input.emergency_contact?.trim() || null,
@@ -88,6 +89,7 @@ export async function update(id, patch) {
     if (k in patch) fields[k] = patch[k] === '' ? null : patch[k];
   }
   if ('joining_date' in patch) fields.joining_date = patch.joining_date || null;
+  if ('birthday' in patch) fields.birthday = patch.birthday || null;
   if (patch.reporting_manager_id !== undefined) fields.reporting_manager_id = patch.reporting_manager_id ? Number(patch.reporting_manager_id) : null;
   if (patch.employment_status && EMPLOYMENT.includes(patch.employment_status)) fields.employment_status = patch.employment_status;
   if (typeof patch.is_active === 'boolean') fields.is_active = patch.is_active;

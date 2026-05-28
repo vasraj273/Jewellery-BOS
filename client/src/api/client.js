@@ -11,6 +11,18 @@ import axios from 'axios';
 const RAW_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 const API_ROOT = `${RAW_BASE}/api`;
 
+/**
+ * Resolve a server-stored asset path (e.g. uploaded document `/uploads/x.pdf`)
+ * to an absolute URL on the API origin. Without this, a relative `/uploads/...`
+ * href resolves against the CLIENT origin (jbos-client) where the file does not
+ * exist, so the document opens as "Not Found". Already-absolute URLs pass through.
+ */
+export function assetUrl(p) {
+  if (!p) return p;
+  if (/^https?:\/\//i.test(p)) return p;
+  return `${RAW_BASE}${p.startsWith('/') ? '' : '/'}${p}`;
+}
+
 export const api = axios.create({
   baseURL: API_ROOT,
   timeout: 30000
@@ -145,6 +157,7 @@ export const shiftsApi = {
   create:     (payload)           => api.post('/shifts', payload).then(r => r.data.data),
   update:     (id, payload)       => api.put(`/shifts/${id}`, payload).then(r => r.data.data),
   deactivate: (id)                => api.delete(`/shifts/${id}`).then(r => r.data.data),
+  activate:   (id)                => api.put(`/shifts/${id}/activate`).then(r => r.data.data),
   assign:     (employeeId, shiftId) => api.put(`/shifts/assign/${employeeId}`, { shift_id: shiftId }).then(r => r.data.data)
 };
 
@@ -159,11 +172,15 @@ export const incentivesApi = {
   list:      (params = {}) => api.get('/incentives', { params }).then(r => r.data.data),
   create:    (payload)     => api.post('/incentives', payload).then(r => r.data.data),
   setStatus: (id, status)  => api.put(`/incentives/${id}`, { status }).then(r => r.data.data),
-  dashboard: ()            => api.get('/incentives/dashboard').then(r => r.data.data)
+  dashboard: ()            => api.get('/incentives/dashboard').then(r => r.data.data),
+  mySummary: ()            => api.get('/incentives/my-summary').then(r => r.data.data)
 };
 
 export const hrCalendarApi = {
-  month: (month) => api.get('/hr-calendar', { params: month ? { month } : {} }).then(r => r.data.data)
+  month:       (month)       => api.get('/hr-calendar', { params: month ? { month } : {} }).then(r => r.data.data),
+  createEvent: (payload)     => api.post('/hr-calendar/events', payload).then(r => r.data.data),
+  updateEvent: (id, payload) => api.put(`/hr-calendar/events/${id}`, payload).then(r => r.data.data),
+  deleteEvent: (id)          => api.delete(`/hr-calendar/events/${id}`).then(r => r.data.data)
 };
 
 export const docUploadApi = {
@@ -175,10 +192,11 @@ export const docUploadApi = {
 };
 
 export const attendanceApi = {
-  list:  (params = {}) => api.get('/attendance', { params }).then(r => r.data.data),
-  mark:  (payload)     => api.post('/attendance', payload).then(r => r.data.data),
-  edit:  (id, payload) => api.put(`/attendance/${id}`, payload).then(r => r.data.data),
-  today: ()            => api.get('/attendance/today').then(r => r.data.data)
+  list:    (params = {}) => api.get('/attendance', { params }).then(r => r.data.data),
+  mark:    (payload)     => api.post('/attendance', payload).then(r => r.data.data),
+  edit:    (id, payload) => api.put(`/attendance/${id}`, payload).then(r => r.data.data),
+  today:   ()            => api.get('/attendance/today').then(r => r.data.data),
+  myToday: ()            => api.get('/attendance/my-today').then(r => r.data.data)
 };
 
 export const leavesApi = {

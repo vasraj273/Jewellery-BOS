@@ -278,6 +278,11 @@ async function runMigrations(tx) {
   if (empCols.length && !empCols.includes('assigned_shift_id')) {
     await tx.unsafe(`ALTER TABLE employees ADD COLUMN assigned_shift_id bigint`);
   }
+  // M7 fix pack — birthday (powers HR-calendar birthday events; its absence
+  // previously made hrCalendar.month() throw and the calendar render empty).
+  if (empCols.length && !empCols.includes('birthday')) {
+    await tx.unsafe(`ALTER TABLE employees ADD COLUMN birthday date`);
+  }
 
   // Drop legacy SQLite-era index name if it still exists from a prior environment.
   await tx.unsafe(`DROP INDEX IF EXISTS idx_gold_rates_purity`);
