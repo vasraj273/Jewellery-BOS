@@ -63,32 +63,18 @@ export async function create(req, res, next) {
       metadata: { final_price: saved.final_price, location: saved.pricing_location, source_lead_id: saved.source_lead_id || null },
       req
     });
-    // CRM linkage: if this quote came from a lead, stamp the lead back +
-    // ensure a customer exists (mobile-deduped) and log it on the timeline.
+    // CRM auto-conversion: a quote raised from a lead converts that lead.
+    // Runs only after a successful save with a real source_lead_id.
     if (saved.source_lead_id) {
-      await leads.attachQuotation(saved.source_lead_id, saved.id, req.user).catch(() => {});
       audit.record({
         actor: req.user, action: 'lead.quote_create',
         entityType: 'lead', entityId: saved.source_lead_id,
         metadata: { quote_id: saved.quote_id },
         req
       });
-      try {
-        const lead = await leads.findById(saved.source_lead_id, null);
-        if (lead) {
-          const { created } = await customers.ensureFromLead(lead, req.user);
-          if (created) {
-            audit.record({
-              actor: req.user, action: 'lead.converted',
-              entityType: 'lead', entityId: saved.source_lead_id,
-              metadata: { via: 'quotation', customer_created: true, mobile: lead.mobile },
-              req
-            });
-          }
-        }
-      } catch { /* non-fatal */ }
+      await leads.markConvertedFromQuotation(saved.source_lead_id, saved.id, req.user).catch(() => {});
     }
-    // Always log the quotation on the matching customer's timeline (by mobile).
+    // Log the quotation on the matching customer's timeline (by mobile).
     await customers.recordQuotationEvent(saved, req.user).catch(() => {});
 
     res.status(201).json({ success: true, data: saved });

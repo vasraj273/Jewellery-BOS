@@ -159,6 +159,7 @@ CREATE TABLE IF NOT EXISTS leads (
   created_by_user_id     bigint REFERENCES users(id) ON DELETE SET NULL,
   converted_customer_id  bigint,                            -- M5 customers (loose link)
   converted_quotation_id bigint,                            -- set when a quote is raised
+  converted_at           timestamptz,                       -- when the lead became Converted
   next_followup_at       timestamptz,
   is_converted           boolean NOT NULL DEFAULT false,
   is_lost                boolean NOT NULL DEFAULT false,

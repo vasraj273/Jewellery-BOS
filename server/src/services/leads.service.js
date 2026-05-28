@@ -169,6 +169,8 @@ export async function update(id, patch, actor) {
     const [st] = await sql`SELECT is_terminal FROM lead_statuses WHERE id = ${sid} LIMIT 1`;
     fields.is_converted = st?.is_terminal === 'converted';
     fields.is_lost      = st?.is_terminal === 'lost';
+    // Stamp converted_at on first transition into the converted state.
+    if (fields.is_converted && !current.is_converted) fields.converted_at = new Date();
   }
 
   // Reassignment — admin only.
@@ -242,16 +244,54 @@ export async function addFollowup(leadId, input, actor) {
   return row;
 }
 
-/** Link a freshly-created quotation back to its source lead. */
-export async function attachQuotation(leadId, quotationId, actor) {
-  const lead = await findById(leadId, actor);
-  if (!lead) return null;
+/**
+ * Auto-convert a lead when a quotation is raised from it.
+ *   - links converted_quotation_id
+ *   - flips status to the 'Converted' terminal status (+ is_converted, clears is_lost)
+ *   - stamps converted_at (only on first conversion)
+ *   - ensures the customer record (mobile-deduped)
+ *   - audits lead.converted_auto
+ *
+ * Idempotent: if the lead is already converted we still (re)link the quote
+ * but don't reset converted_at or re-audit the conversion.
+ * Scope: actor=null bypasses scope (controller already created the quote).
+ */
+export async function markConvertedFromQuotation(leadId, quotationId, actor) {
   const sql = getDb();
-  await sql`
-    UPDATE leads SET converted_quotation_id = ${quotationId}, updated_at = now()
-    WHERE id = ${leadId}
-  `;
-  return true;
+  const current = await getRaw(leadId);
+  if (!current) return null;
+
+  const [conv] = await sql`SELECT id FROM lead_statuses WHERE is_terminal = 'converted' ORDER BY id LIMIT 1`;
+  const alreadyConverted = current.is_converted;
+
+  const fields = {
+    converted_quotation_id: quotationId,
+    is_converted: true,
+    is_lost: false
+  };
+  if (conv?.id) fields.status_id = conv.id;
+  if (!alreadyConverted) fields.converted_at = new Date();
+
+  const cols = Object.keys(fields);
+  await sql`UPDATE leads SET ${sql(fields, ...cols)}, updated_at = now() WHERE id = ${leadId}`;
+
+  // Ensure the customer (dedupe by mobile) + keep both-way links.
+  const fresh = await getRaw(leadId);
+  let customerCreated = false;
+  try {
+    const { created } = await customers.ensureFromLead(fresh, actor);
+    customerCreated = created;
+  } catch { /* non-fatal */ }
+
+  if (!alreadyConverted) {
+    audit.record({
+      actor, action: 'lead.converted_auto',
+      entityType: 'lead', entityId: leadId,
+      metadata: { quote_id: quotationId, customer_created: customerCreated, mobile: fresh.mobile },
+      req: null
+    });
+  }
+  return { converted: !alreadyConverted, customerCreated };
 }
 
 /** Dashboard widget counts, scoped to the actor. */

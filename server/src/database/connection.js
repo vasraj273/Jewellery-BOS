@@ -237,6 +237,12 @@ async function runMigrations(tx) {
   }
   await tx.unsafe(`CREATE INDEX IF NOT EXISTS idx_quotations_source_lead ON quotations(source_lead_id)`);
 
+  // M5 fix — auto-conversion timestamp on leads
+  const leadCols = await cols('leads');
+  if (leadCols.length && !leadCols.includes('converted_at')) {
+    await tx.unsafe(`ALTER TABLE leads ADD COLUMN converted_at timestamptz`);
+  }
+
   // Drop legacy SQLite-era index name if it still exists from a prior environment.
   await tx.unsafe(`DROP INDEX IF EXISTS idx_gold_rates_purity`);
   await tx.unsafe(`CREATE INDEX IF NOT EXISTS idx_gold_rates_loc_purity ON gold_rates(location, purity, updated_at DESC)`);
