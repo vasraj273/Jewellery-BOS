@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { employeesApi, shiftsApi, docUploadApi, assetUrl } from '../api/client.js';
+import { Tabs } from '../components/ui.jsx';
 
 const SALARY_TYPES = [
   { value: 'monthly', label: 'Monthly' },
@@ -17,6 +18,7 @@ export default function EmployeeDetail() {
   const [docs, setDocs] = useState([]);
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
+  const [tab, setTab] = useState('profile');
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
   function load() {
@@ -42,24 +44,34 @@ export default function EmployeeDetail() {
 
       {toast && <div className={`mb-4 px-4 py-3 text-sm border ${toast.kind === 'ok' ? 'bg-green-50 border-green-300 text-green-700' : 'bg-red-50 border-red-300 text-red-700'}`}>{toast.text}</div>}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card">
-          <h2 className="section-title">Profile</h2>
-          <Row k="Name" v={emp.full_name} />
-          <Row k="Email" v={emp.email || '—'} />
-          <Row k="Mobile" v={emp.mobile || '—'} />
-          <Row k="Department" v={emp.department || '—'} />
-          <Row k="Designation" v={emp.designation || '—'} />
-          <Row k="Manager" v={emp.manager_name || '—'} />
-          <Row k="Birthday" v={emp.birthday ? new Date(emp.birthday).toLocaleDateString('en-IN') : '—'} />
-          <Row k="Status" v={(emp.employment_status || '').replace('_', ' ')} />
-          <Row k="Shift" v={shifts.find((s) => s.id === emp.assigned_shift_id)?.shift_name || '—'} />
-        </div>
+      <Tabs
+        tabs={[{ key: 'profile', label: 'Profile' }, { key: 'compensation', label: 'Compensation' }, { key: 'documents', label: 'Documents' }]}
+        value={tab}
+        onChange={setTab}
+      />
 
-        <CompensationCard employeeId={id} comp={comp} onSaved={(c) => { setComp(c); flash('ok', 'Compensation saved'); }} onError={(m) => flash('err', m)} />
+      <div className="animate-fade-in">
+        {tab === 'profile' && (
+          <div className="card max-w-2xl">
+            <h2 className="section-title">Profile</h2>
+            <Row k="Name" v={emp.full_name} />
+            <Row k="Email" v={emp.email || '—'} />
+            <Row k="Mobile" v={emp.mobile || '—'} />
+            <Row k="Department" v={emp.department || '—'} />
+            <Row k="Designation" v={emp.designation || '—'} />
+            <Row k="Manager" v={emp.manager_name || '—'} />
+            <Row k="Birthday" v={emp.birthday ? new Date(emp.birthday).toLocaleDateString('en-IN') : '—'} />
+            <Row k="Status" v={(emp.employment_status || '').replace('_', ' ')} />
+            <Row k="Shift" v={shifts.find((s) => s.id === emp.assigned_shift_id)?.shift_name || '—'} />
+          </div>
+        )}
+        {tab === 'compensation' && (
+          <CompensationCard employeeId={id} comp={comp} onSaved={(c) => { setComp(c); flash('ok', 'Compensation saved'); }} onError={(m) => flash('err', m)} />
+        )}
+        {tab === 'documents' && (
+          <DocumentsCard employeeId={id} docs={docs} onChanged={() => { load(); }} onError={(m) => flash('err', m)} flash={flash} categories={DOC_CATEGORIES} />
+        )}
       </div>
-
-      <DocumentsCard employeeId={id} docs={docs} onChanged={() => { load(); }} onError={(m) => flash('err', m)} flash={flash} categories={DOC_CATEGORIES} />
     </div>
   );
 }

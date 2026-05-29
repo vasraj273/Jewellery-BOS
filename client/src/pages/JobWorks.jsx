@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { jobWorksApi, karigarsApi } from '../api/client.js';
+import { PageHeader, StatusBadge, EmptyState, SkeletonRows } from '../components/ui.jsx';
 
 const STATUSES = ['issued', 'in_progress', 'completed', 'cancelled'];
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -49,13 +50,11 @@ export default function JobWorks() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6 sm:mb-8">
-        <div>
-          <h1 className="font-serif text-2xl sm:text-3xl tracking-wider text-ink">Job Work</h1>
-          <p className="text-xs uppercase tracking-[3px] text-gold mt-2">Karigar gold &amp; labour ledger</p>
-        </div>
-        <button onClick={() => setShowForm((s) => !s)} className="btn-primary self-start sm:self-auto">{showForm ? 'Close' : '+ Issue Job Work'}</button>
-      </div>
+      <PageHeader
+        title="Job Work"
+        subtitle="Karigar gold & labour ledger"
+        actions={<button onClick={() => setShowForm((s) => !s)} className="btn-primary">{showForm ? 'Close' : '+ Issue Job Work'}</button>}
+      />
 
       {toast && <div className={`mb-4 px-4 py-3 text-sm border ${toast.kind === 'ok' ? 'bg-green-50 border-green-300 text-green-700' : 'bg-red-50 border-red-300 text-red-700'}`}>{toast.text}</div>}
 
@@ -106,16 +105,16 @@ export default function JobWorks() {
               </tr>
             </thead>
             <tbody>
-              {loading ? <tr><td colSpan="7" className="px-4 py-6 text-center text-ink-muted">Loading…</td></tr>
-               : rows.length === 0 ? <tr><td colSpan="7" className="px-4 py-6 text-center text-ink-muted">No job work.</td></tr>
-               : rows.map((j, i) => (
-                <tr key={j.id} className={`border-b border-gold-light/20 ${i % 2 ? 'bg-off-white' : ''}`}>
+              {loading ? <SkeletonRows rows={6} cols={7} />
+               : rows.length === 0 ? <EmptyState colSpan={7} title="No job work" hint="Issue job work to a karigar to start the ledger." />
+               : rows.map((j) => (
+                <tr key={j.id} className="border-b border-gold-light/20 transition-colors hover:bg-gold-pale/40">
                   <td className="px-4 py-3 font-mono text-xs">{j.job_work_code}<div className="text-[10px] text-ink-muted">{j.description || ''}</div></td>
                   <td className="px-4 py-3">{j.karigar_name || '—'}</td>
                   <td className="px-4 py-3 text-right text-xs">{Number(j.gold_issued_gm || 0).toFixed(2)} / {Number(j.gold_returned_gm || 0).toFixed(2)}g</td>
                   <td className="px-4 py-3 text-right text-xs">{Number(j.wastage_gm || 0).toFixed(2)}g</td>
-                  <td className={`px-4 py-3 text-right ${Number(j.payment_due) > 0 ? 'text-red-600 font-medium' : 'text-ink-muted'}`}>{inr(j.payment_due)}</td>
-                  <td className="px-4 py-3 text-center"><span className="text-[10px] uppercase tracking-wider px-2 py-0.5 border border-gold-light/50 rounded">{j.status.replace('_', ' ')}</span></td>
+                  <td className={`px-4 py-3 text-right ${Number(j.payment_due) > 0 ? 'text-danger font-medium' : 'text-ink-muted'}`}>{inr(j.payment_due)}</td>
+                  <td className="px-4 py-3 text-center"><StatusBadge status={j.status} /></td>
                   <td className="px-4 py-3 text-right"><button onClick={() => setEdit({ ...j, gold_returned_gm: j.gold_returned_gm || 0, wastage_gm: j.wastage_gm || 0, labour_charge: j.labour_charge || 0, amount_paid: j.amount_paid || 0, notes: j.notes || '' })} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Manage</button></td>
                 </tr>
               ))}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { karigarsApi } from '../api/client.js';
+import { PageHeader } from '../components/ui.jsx';
 
 const EMPTY = { name: '', mobile: '', email: '', address: '', skill: '', notes: '' };
 
@@ -33,10 +34,7 @@ export default function Karigars() {
 
   return (
     <div>
-      <header className="mb-6 sm:mb-8">
-        <h1 className="font-serif text-2xl sm:text-3xl tracking-wider text-ink">Karigars</h1>
-        <p className="text-xs uppercase tracking-[3px] text-gold mt-2">Job workers &amp; craftsmen</p>
-      </header>
+      <PageHeader title="Karigars" subtitle="Job workers & craftsmen" />
 
       {toast && <div className={`mb-4 px-4 py-3 text-sm border ${toast.kind === 'ok' ? 'bg-green-50 border-green-300 text-green-700' : 'bg-red-50 border-red-300 text-red-700'}`}>{toast.text}</div>}
 

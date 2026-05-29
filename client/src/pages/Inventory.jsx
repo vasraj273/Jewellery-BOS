@@ -2,19 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { inventoryApi, suppliersApi, mastersApi } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
+import { PageHeader, StatusBadge, EmptyState, SkeletonRows } from '../components/ui.jsx';
 
 const ADMIN_ROLES = ['super_admin', 'admin'];
 const STATUSES = ['in_stock', 'reserved', 'sold', 'repair', 'custom_order', 'archived'];
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-
-const STATUS_STYLE = {
-  in_stock:     'bg-green-50 text-green-700 border-green-300',
-  reserved:     'bg-amber-50 text-amber-700 border-amber-300',
-  sold:         'bg-gray-100 text-gray-600 border-gray-300',
-  repair:       'bg-blue-50 text-blue-700 border-blue-300',
-  custom_order: 'bg-purple-50 text-purple-700 border-purple-300',
-  archived:     'bg-gray-50 text-gray-400 border-gray-200'
-};
 
 const EMPTY = {
   name: '', category: '', metal_type: 'Gold', purity: '22Kt', design_code: '',
@@ -77,13 +69,11 @@ export default function Inventory() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6 sm:mb-8">
-        <div>
-          <h1 className="font-serif text-2xl sm:text-3xl tracking-wider text-ink">Inventory</h1>
-          <p className="text-xs uppercase tracking-[3px] text-gold mt-2">Stock &amp; Valuation</p>
-        </div>
-        {isAdmin && <button onClick={() => setShowForm((s) => !s)} className="btn-primary self-start sm:self-auto">{showForm ? 'Close' : '+ New Item'}</button>}
-      </div>
+      <PageHeader
+        title="Inventory"
+        subtitle="Stock & Valuation"
+        actions={isAdmin && <button onClick={() => setShowForm((s) => !s)} className="btn-primary">{showForm ? 'Close' : '+ New Item'}</button>}
+      />
 
       {toast && <div className={`mb-4 px-4 py-3 text-sm border ${toast.kind === 'ok' ? 'bg-green-50 border-green-300 text-green-700' : 'bg-red-50 border-red-300 text-red-700'}`}>{toast.text}</div>}
 
@@ -162,16 +152,16 @@ export default function Inventory() {
               </tr>
             </thead>
             <tbody>
-              {loading ? <tr><td colSpan="7" className="px-4 py-6 text-center text-ink-muted">Loading…</td></tr>
-               : items.length === 0 ? <tr><td colSpan="7" className="px-4 py-6 text-center text-ink-muted">No items.</td></tr>
-               : items.map((it, i) => (
-                <tr key={it.id} className={`border-b border-gold-light/20 ${i % 2 ? 'bg-off-white' : ''}`}>
+              {loading ? <SkeletonRows rows={6} cols={7} />
+               : items.length === 0 ? <EmptyState colSpan={7} title="No items" hint="Add stock or record a purchase to populate inventory." />
+               : items.map((it) => (
+                <tr key={it.id} className="border-b border-gold-light/20 transition-colors hover:bg-gold-pale/40">
                   <td className="px-4 py-3 font-mono text-xs">{it.sku}</td>
                   <td className="px-4 py-3">{it.name}<div className="text-[10px] text-ink-muted">{it.metal_type} {it.purity}{it.design_code ? ` · ${it.design_code}` : ''}</div></td>
                   <td className="px-4 py-3 text-ink-muted">{it.category || '—'}</td>
                   <td className="px-4 py-3 text-right">{Number(it.net_weight || 0).toFixed(2)}g</td>
                   <td className="px-4 py-3 text-right font-medium text-gold-dark">{inr(it.valuation?.market_value)}</td>
-                  <td className="px-4 py-3 text-center"><span className={`inline-block px-2 py-0.5 text-[10px] uppercase tracking-wider border rounded ${STATUS_STYLE[it.status] || ''}`}>{it.status.replace('_', ' ')}</span></td>
+                  <td className="px-4 py-3 text-center"><StatusBadge status={it.status} /></td>
                   <td className="px-4 py-3 text-right"><Link to={`/inventory/${it.id}`} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">View →</Link></td>
                 </tr>
               ))}

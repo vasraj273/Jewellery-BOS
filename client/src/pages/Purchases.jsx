@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { purchasesApi, suppliersApi } from '../api/client.js';
+import { PageHeader, EmptyState, SkeletonRows } from '../components/ui.jsx';
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 const today = () => new Date().toISOString().slice(0, 10);
@@ -47,13 +48,11 @@ export default function Purchases() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6 sm:mb-8">
-        <div>
-          <h1 className="font-serif text-2xl sm:text-3xl tracking-wider text-ink">Purchases</h1>
-          <p className="text-xs uppercase tracking-[3px] text-gold mt-2">Procurement → stock entry</p>
-        </div>
-        <button onClick={() => setShowForm((s) => !s)} className="btn-primary self-start sm:self-auto">{showForm ? 'Close' : '+ New Purchase'}</button>
-      </div>
+      <PageHeader
+        title="Purchases"
+        subtitle="Procurement → stock entry"
+        actions={<button onClick={() => setShowForm((s) => !s)} className="btn-primary">{showForm ? 'Close' : '+ New Purchase'}</button>}
+      />
 
       {toast && <div className={`mb-4 px-4 py-3 text-sm border ${toast.kind === 'ok' ? 'bg-green-50 border-green-300 text-green-700' : 'bg-red-50 border-red-300 text-red-700'}`}>{toast.text}</div>}
 
@@ -134,10 +133,10 @@ export default function Purchases() {
               </tr>
             </thead>
             <tbody>
-              {loading ? <tr><td colSpan="7" className="px-4 py-6 text-center text-ink-muted">Loading…</td></tr>
-               : rows.length === 0 ? <tr><td colSpan="7" className="px-4 py-6 text-center text-ink-muted">No purchases.</td></tr>
-               : rows.map((p, i) => (
-                <tr key={p.id} className={`border-b border-gold-light/20 ${i % 2 ? 'bg-off-white' : ''}`}>
+              {loading ? <SkeletonRows rows={6} cols={7} />
+               : rows.length === 0 ? <EmptyState colSpan={7} title="No purchases" hint="Record a purchase to create stock." />
+               : rows.map((p) => (
+                <tr key={p.id} className="border-b border-gold-light/20 transition-colors hover:bg-gold-pale/40">
                   <td className="px-4 py-3 font-mono text-xs">{p.purchase_code}</td>
                   <td className="px-4 py-3">{p.supplier_name || '—'}</td>
                   <td className="px-4 py-3 text-ink-muted">{p.purchase_date}</td>

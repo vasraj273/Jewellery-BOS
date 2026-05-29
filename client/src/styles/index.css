@@ -5,16 +5,46 @@
 @layer base {
   html, body { @apply h-full bg-off-white text-ink font-sans antialiased; }
   html, body { @apply overflow-x-hidden; }
-  body { @apply w-full; }
+  body { @apply w-full leading-relaxed; }
   #root { @apply min-h-full; }
+  /* Tighter, intentional heading rhythm; body stays relaxed for readability. */
+  h1, h2, h3 { @apply leading-tight; }
 }
 
 @layer components {
-  .btn { @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium tracking-wide uppercase transition whitespace-nowrap; }
-  .btn-primary { @apply btn bg-ink text-gold border border-gold hover:bg-black; }
-  .btn-secondary { @apply btn bg-white text-ink border border-gold-light hover:border-gold; }
-  .card { @apply bg-white border border-gold-light/60 p-4 sm:p-6; }
-  .input { @apply w-full px-3 py-2 bg-white border border-gold-light/60 text-sm text-ink focus:outline-none focus:border-gold; }
+  /* ── Buttons — subtle depth + hover lift ───────────────────── */
+  .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium tracking-wide uppercase rounded-lg transition-all duration-200 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0; }
+  .btn-primary { @apply btn bg-ink text-gold border border-gold shadow-sm hover:bg-black hover:shadow-card-hover hover:-translate-y-px; }
+  .btn-secondary { @apply btn bg-white text-ink border border-gold-light hover:border-gold hover:bg-gold-pale/40 hover:-translate-y-px; }
+  .btn-ghost { @apply btn bg-transparent text-ink-mid hover:text-gold hover:bg-gold-pale/50; }
+
+  /* ── Cards — softer border, subtle shadow, rounded ─────────── */
+  .card { @apply bg-white border border-gold-light/40 rounded-xl shadow-card p-5 sm:p-6; }
+  .card-hover { @apply transition-all duration-200 hover:shadow-card-hover hover:border-gold-light; }
+
+  /* ── Inputs — rounded + focus ring ─────────────────────────── */
+  .input { @apply w-full px-3 py-2 bg-white border border-gold-light/60 rounded-lg text-sm text-ink transition focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20; }
   .label { @apply block text-[11px] uppercase tracking-widest text-ink-muted mb-1; }
   .section-title { @apply font-serif text-lg sm:text-xl text-ink tracking-wider mb-3 sm:mb-4; }
+
+  /* ── Standard status badges (green/amber/red/blue/neutral) ─── */
+  .badge { @apply inline-flex items-center px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider border rounded-full; }
+  .badge-success { @apply badge bg-success-bg text-success border-success-border; }
+  .badge-warning { @apply badge bg-warning-bg text-warning border-warning-border; }
+  .badge-danger  { @apply badge bg-danger-bg  text-danger  border-danger-border; }
+  .badge-info    { @apply badge bg-info-bg    text-info    border-info-border; }
+  .badge-neutral { @apply badge bg-gray-100   text-gray-600 border-gray-300; }
+
+  /* ── ERP table shell — sticky header, row hover ────────────── */
+  .erp-table { @apply w-full text-sm; }
+  .erp-table thead { @apply bg-ink text-gold text-[10px] uppercase tracking-widest; }
+  .erp-table thead th { @apply px-4 py-3 text-left font-medium sticky top-0 z-10; }
+  .erp-table tbody tr { @apply border-b border-gold-light/20 transition-colors hover:bg-gold-pale/40; }
+  .erp-table tbody td { @apply px-4 py-3; }
+
+  /* ── Skeleton shimmer ──────────────────────────────────────── */
+  .skeleton { @apply rounded-md bg-gradient-to-r from-gold-light/20 via-gold-light/40 to-gold-light/20 bg-[length:800px_100%] animate-shimmer; }
+
+  /* ── Page chrome ───────────────────────────────────────────── */
+  .toolbar { @apply card flex flex-col sm:flex-row sm:items-end gap-3 mb-4; }
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { customersApi, usersApi } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
+import { PageHeader } from '../components/ui.jsx';
 
 const ADMIN_ROLES = ['super_admin', 'admin'];
 
@@ -53,14 +54,10 @@ export default function Customers() {
 
   return (
     <div>
-      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-6 sm:mb-8">
-        <div>
-          <h1 className="font-serif text-2xl sm:text-3xl tracking-wider text-ink">Customers</h1>
-          <p className="text-xs uppercase tracking-[3px] text-gold mt-2">
-            {loading ? 'Loading…' : `${rows.length} customer${rows.length === 1 ? '' : 's'}`}
-          </p>
-        </div>
-      </header>
+      <PageHeader
+        title="Customers"
+        subtitle={loading ? 'Loading…' : `${rows.length} customer${rows.length === 1 ? '' : 's'}`}
+      />
 
       <div className="card mb-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

@@ -1,17 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { salesOrdersApi } from '../api/client.js';
+import { PageHeader, StatusBadge, EmptyState, SkeletonRows } from '../components/ui.jsx';
 
 const STATUSES = ['draft', 'confirmed', 'production', 'ready', 'delivered', 'cancelled'];
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-const STATUS_STYLE = {
-  draft:      'bg-gray-100 text-gray-600 border-gray-300',
-  confirmed:  'bg-blue-50 text-blue-700 border-blue-300',
-  production: 'bg-amber-50 text-amber-700 border-amber-300',
-  ready:      'bg-purple-50 text-purple-700 border-purple-300',
-  delivered:  'bg-green-50 text-green-700 border-green-300',
-  cancelled:  'bg-red-50 text-red-600 border-red-300'
-};
 
 export default function SalesOrders() {
   const [rows, setRows] = useState([]);
@@ -28,10 +21,7 @@ export default function SalesOrders() {
 
   return (
     <div>
-      <header className="mb-6 sm:mb-8">
-        <h1 className="font-serif text-2xl sm:text-3xl tracking-wider text-ink">Sales Orders</h1>
-        <p className="text-xs uppercase tracking-[3px] text-gold mt-2">Confirmed orders &amp; fulfilment</p>
-      </header>
+      <PageHeader title="Sales Orders" subtitle="Confirmed orders & fulfilment" />
 
       <div className="card mb-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -60,16 +50,16 @@ export default function SalesOrders() {
               </tr>
             </thead>
             <tbody>
-              {loading ? <tr><td colSpan="7" className="px-4 py-6 text-center text-ink-muted">Loading…</td></tr>
-               : rows.length === 0 ? <tr><td colSpan="7" className="px-4 py-6 text-center text-ink-muted">No sales orders. Convert a quotation to create one.</td></tr>
-               : rows.map((o, i) => (
-                <tr key={o.id} className={`border-b border-gold-light/20 ${i % 2 ? 'bg-off-white' : ''}`}>
+              {loading ? <SkeletonRows rows={6} cols={7} />
+               : rows.length === 0 ? <EmptyState colSpan={7} title="No sales orders" hint="Convert a quotation to create one." />
+               : rows.map((o) => (
+                <tr key={o.id} className="border-b border-gold-light/20 transition-colors hover:bg-gold-pale/40">
                   <td className="px-4 py-3 font-mono text-xs">{o.order_code}</td>
                   <td className="px-4 py-3">{o.customer_name || '—'}<div className="text-[10px] text-ink-muted">{o.customer_mobile || ''}</div></td>
                   <td className="px-4 py-3 text-ink-muted">{o.product_name || '—'}</td>
                   <td className="px-4 py-3 text-right font-medium text-gold-dark">{inr(o.total_amount)}</td>
                   <td className="px-4 py-3 text-ink-muted text-xs">{o.expected_delivery || '—'}</td>
-                  <td className="px-4 py-3 text-center"><span className={`inline-block px-2 py-0.5 text-[10px] uppercase tracking-wider border rounded ${STATUS_STYLE[o.status] || ''}`}>{o.status}</span></td>
+                  <td className="px-4 py-3 text-center"><StatusBadge status={o.status} /></td>
                   <td className="px-4 py-3 text-right"><Link to={`/sales-orders/${o.id}`} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">View →</Link></td>
                 </tr>
               ))}

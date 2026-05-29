@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { inventoryApi, uploadsApi, docUploadApi, assetUrl } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
+import { Tabs } from '../components/ui.jsx';
 
 const ADMIN_ROLES = ['super_admin', 'admin'];
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -19,6 +20,7 @@ export default function InventoryDetail() {
   const [toast, setToast] = useState(null);
   const [move, setMove] = useState({ movement_type: 'repair', reason: '' });
   const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState('details');
 
   function flash(kind, text) { setToast({ kind, text }); setTimeout(() => setToast(null), 4000); }
   function reload() { return inventoryApi.get(id).then(setItem).catch(() => setItem(null)).finally(() => setLoading(false)); }
@@ -90,7 +92,9 @@ export default function InventoryDetail() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2">
+          <Tabs tabs={[{ key: 'details', label: 'Details' }, { key: 'ledger', label: 'Ledger' }]} value={tab} onChange={setTab} />
+          {tab === 'details' && (
           <div className="card">
             <h2 className="section-title">Specifications</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-4 text-sm">
@@ -109,7 +113,10 @@ export default function InventoryDetail() {
             </div>
             {item.notes && <p className="text-sm text-ink-muted mt-4 border-t border-gold-light/40 pt-3">{item.notes}</p>}
           </div>
+          )}
 
+          {tab === 'ledger' && (
+          <div className="space-y-6">
           <div className="card p-0 overflow-hidden">
             <div className="bg-ink text-gold px-4 py-3 text-[10px] uppercase tracking-widest">Movement Ledger</div>
             <div className="overflow-x-auto">
@@ -145,6 +152,8 @@ export default function InventoryDetail() {
                 <button onClick={() => act(() => inventoryApi.movement(item.id, move), 'Movement recorded')} disabled={busy} className="btn-primary justify-center">Record</button>
               </div>
             </div>
+          )}
+          </div>
           )}
         </div>
 

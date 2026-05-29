@@ -1,16 +1,10 @@
 import { useEffect, useState } from 'react';
 import { repairsApi } from '../api/client.js';
+import { PageHeader, StatusBadge, EmptyState, SkeletonRows } from '../components/ui.jsx';
 
 const STATUSES = ['received', 'in_progress', 'ready', 'delivered', 'cancelled'];
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 const EMPTY = { customer_name: '', customer_mobile: '', item_description: '', issue_notes: '', promised_date: '', charge: 0 };
-const STATUS_STYLE = {
-  received:    'bg-blue-50 text-blue-700 border-blue-300',
-  in_progress: 'bg-amber-50 text-amber-700 border-amber-300',
-  ready:       'bg-purple-50 text-purple-700 border-purple-300',
-  delivered:   'bg-green-50 text-green-700 border-green-300',
-  cancelled:   'bg-red-50 text-red-600 border-red-300'
-};
 
 export default function Repairs() {
   const [rows, setRows] = useState([]);
@@ -51,13 +45,11 @@ export default function Repairs() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6 sm:mb-8">
-        <div>
-          <h1 className="font-serif text-2xl sm:text-3xl tracking-wider text-ink">Repairs</h1>
-          <p className="text-xs uppercase tracking-[3px] text-gold mt-2">Service &amp; repair orders</p>
-        </div>
-        <button onClick={() => setShowForm((s) => !s)} className="btn-primary self-start sm:self-auto">{showForm ? 'Close' : '+ New Repair'}</button>
-      </div>
+      <PageHeader
+        title="Repairs"
+        subtitle="Service & repair orders"
+        actions={<button onClick={() => setShowForm((s) => !s)} className="btn-primary">{showForm ? 'Close' : '+ New Repair'}</button>}
+      />
 
       {toast && <div className={`mb-4 px-4 py-3 text-sm border ${toast.kind === 'ok' ? 'bg-green-50 border-green-300 text-green-700' : 'bg-red-50 border-red-300 text-red-700'}`}>{toast.text}</div>}
 
@@ -103,18 +95,18 @@ export default function Repairs() {
               </tr>
             </thead>
             <tbody>
-              {loading ? <tr><td colSpan="7" className="px-4 py-6 text-center text-ink-muted">Loading…</td></tr>
-               : rows.length === 0 ? <tr><td colSpan="7" className="px-4 py-6 text-center text-ink-muted">No repairs.</td></tr>
-               : rows.map((r, i) => {
+              {loading ? <SkeletonRows rows={6} cols={7} />
+               : rows.length === 0 ? <EmptyState colSpan={7} title="No repairs" hint="Log a repair to start tracking service orders." />
+               : rows.map((r) => {
                   const overdue = r.promised_date && !['delivered', 'cancelled'].includes(r.status) && new Date(r.promised_date) < new Date(new Date().toISOString().slice(0, 10));
                   return (
-                  <tr key={r.id} className={`border-b border-gold-light/20 ${i % 2 ? 'bg-off-white' : ''}`}>
+                  <tr key={r.id} className="border-b border-gold-light/20 transition-colors hover:bg-gold-pale/40">
                     <td className="px-4 py-3 font-mono text-xs">{r.repair_code}</td>
                     <td className="px-4 py-3">{r.customer_name || '—'}<div className="text-[10px] text-ink-muted">{r.customer_mobile || ''}</div></td>
                     <td className="px-4 py-3 text-ink-muted">{r.item_description}</td>
                     <td className="px-4 py-3 text-ink-muted text-xs">{r.received_date}</td>
-                    <td className={`px-4 py-3 text-xs ${overdue ? 'text-red-600 font-medium' : 'text-ink-muted'}`}>{r.promised_date || '—'}{overdue ? ' · late' : ''}</td>
-                    <td className="px-4 py-3 text-center"><span className={`inline-block px-2 py-0.5 text-[10px] uppercase tracking-wider border rounded ${STATUS_STYLE[r.status] || ''}`}>{r.status.replace('_', ' ')}</span></td>
+                    <td className={`px-4 py-3 text-xs ${overdue ? 'text-danger font-medium' : 'text-ink-muted'}`}>{r.promised_date || '—'}{overdue ? ' · late' : ''}</td>
+                    <td className="px-4 py-3 text-center"><StatusBadge status={r.status} tone={overdue ? 'danger' : undefined} /></td>
                     <td className="px-4 py-3 text-right"><button onClick={() => setEdit({ ...r, promised_date: r.promised_date || '', charge: r.charge || 0, notes: r.notes || '', issue_notes: r.issue_notes || '' })} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Manage</button></td>
                   </tr>
                   );

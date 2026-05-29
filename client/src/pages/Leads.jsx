@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { leadsApi, usersApi } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import LeadFormModal from '../components/LeadFormModal.jsx';
+import { PageHeader } from '../components/ui.jsx';
 
 const ADMIN_ROLES = ['super_admin', 'admin'];
 
@@ -80,15 +81,11 @@ export default function Leads() {
 
   return (
     <div>
-      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-6 sm:mb-8">
-        <div>
-          <h1 className="font-serif text-2xl sm:text-3xl tracking-wider text-ink">Leads</h1>
-          <p className="text-xs uppercase tracking-[3px] text-gold mt-2">
-            {loading ? 'Loading…' : `${rows.length} lead${rows.length === 1 ? '' : 's'}`}
-          </p>
-        </div>
-        <button onClick={() => setShowCreate(true)} className="btn-primary self-start sm:self-auto">+ New Lead</button>
-      </header>
+      <PageHeader
+        title="Leads"
+        subtitle={loading ? 'Loading…' : `${rows.length} lead${rows.length === 1 ? '' : 's'}`}
+        actions={<button onClick={() => setShowCreate(true)} className="btn-primary">+ New Lead</button>}
+      />
 
       {/* Filters */}
       <div className="card mb-4">
@@ -152,8 +149,8 @@ export default function Leads() {
               <tr><td colSpan="8" className="px-4 py-6 text-center text-ink-muted">Loading…</td></tr>
             ) : rows.length === 0 ? (
               <tr><td colSpan="8" className="px-4 py-6 text-center text-ink-muted">No leads match.</td></tr>
-            ) : rows.map((l, i) => (
-              <tr key={l.id} className={i % 2 ? 'bg-off-white' : ''}>
+            ) : rows.map((l) => (
+              <tr key={l.id} className="border-b border-gold-light/20 transition-colors hover:bg-gold-pale/40">
                 <td className="px-4 py-3 font-medium">{l.lead_code}</td>
                 <td className="px-4 py-3">
                   {l.name}

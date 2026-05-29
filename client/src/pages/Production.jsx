@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { productionApi } from '../api/client.js';
+import { PageHeader, EmptyState, SkeletonRows } from '../components/ui.jsx';
 
 const STAGES = ['design_approved', 'in_production', 'stone_setting', 'polishing', 'qc', 'ready', 'delivered'];
 
@@ -16,10 +17,7 @@ export default function Production() {
 
   return (
     <div>
-      <header className="mb-6 sm:mb-8">
-        <h1 className="font-serif text-2xl sm:text-3xl tracking-wider text-ink">Production</h1>
-        <p className="text-xs uppercase tracking-[3px] text-gold mt-2">Manufacturing pipeline</p>
-      </header>
+      <PageHeader title="Production" subtitle="Manufacturing pipeline" />
 
       <div className="card mb-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -53,10 +51,10 @@ export default function Production() {
               </tr>
             </thead>
             <tbody>
-              {loading ? <tr><td colSpan="7" className="px-4 py-6 text-center text-ink-muted">Loading…</td></tr>
-               : rows.length === 0 ? <tr><td colSpan="7" className="px-4 py-6 text-center text-ink-muted">No production jobs.</td></tr>
-               : rows.map((j, i) => (
-                <tr key={j.id} className={`border-b border-gold-light/20 ${i % 2 ? 'bg-off-white' : ''} ${j.delayed ? 'bg-red-50/50' : ''}`}>
+              {loading ? <SkeletonRows rows={6} cols={7} />
+               : rows.length === 0 ? <EmptyState colSpan={7} title="No production jobs" hint="Set a sales order to production to start a job." />
+               : rows.map((j) => (
+                <tr key={j.id} className={`border-b border-gold-light/20 transition-colors hover:bg-gold-pale/40 ${j.delayed ? 'bg-danger-bg/60' : ''}`}>
                   <td className="px-4 py-3 font-mono text-xs">{j.job_code}</td>
                   <td className="px-4 py-3 font-mono text-xs">{j.order_code}</td>
                   <td className="px-4 py-3">{j.product_name || '—'}<div className="text-[10px] text-ink-muted">{j.customer_name}</div></td>
