@@ -53,7 +53,61 @@ export async function initDatabase() {
   await autoBootstrapAdmin();
   await autoSeedMasters();
   await autoSeedEmployees();
+  await autoSeedAccounts();
   return sql;
+}
+
+/**
+ * Seed the chart of accounts (M10) once, if empty. System accounts carry stable
+ * `code`s the posting engine resolves (CASH, BANK, AR, AP, SALES, GST, …).
+ * Idempotent: exits if any account already exists.
+ */
+async function autoSeedAccounts() {
+  const [{ count }] = await sql`SELECT count(*)::int AS count FROM accounts`;
+  if (count > 0) return;
+
+  const groups = [
+    { name: 'Assets',      nature: 'asset',     sort_order: 10 },
+    { name: 'Liabilities', nature: 'liability', sort_order: 20 },
+    { name: 'Income',      nature: 'income',    sort_order: 30 },
+    { name: 'Expenses',    nature: 'expense',   sort_order: 40 },
+    { name: 'Equity',      nature: 'equity',    sort_order: 50 }
+  ];
+  const gid = {};
+  for (const g of groups) {
+    const existing = await sql`SELECT id FROM account_groups WHERE lower(name) = lower(${g.name}) LIMIT 1`;
+    if (existing.length) { gid[g.name] = existing[0].id; continue; }
+    const [row] = await sql`INSERT INTO account_groups (name, nature, sort_order) VALUES (${g.name}, ${g.nature}, ${g.sort_order}) RETURNING id`;
+    gid[g.name] = row.id;
+  }
+
+  const accounts = [
+    { code: 'CASH',       name: 'Cash',                group: 'Assets',      nature: 'asset',     cash: true },
+    { code: 'BANK',       name: 'Bank',                group: 'Assets',      nature: 'asset',     cash: true },
+    { code: 'INV',        name: 'Inventory',           group: 'Assets',      nature: 'asset' },
+    { code: 'AR',         name: 'Accounts Receivable', group: 'Assets',      nature: 'asset' },
+    { code: 'AP',         name: 'Supplier Payables',   group: 'Liabilities', nature: 'liability' },
+    { code: 'ADV',        name: 'Advances Received',   group: 'Liabilities', nature: 'liability' },
+    { code: 'GST',        name: 'GST Payable',         group: 'Liabilities', nature: 'liability' },
+    { code: 'SALES',      name: 'Jewellery Sales',     group: 'Income',      nature: 'income' },
+    { code: 'OTHINC',     name: 'Other Income',        group: 'Income',      nature: 'income' },
+    { code: 'EXP_SALARY', name: 'Salary',              group: 'Expenses',    nature: 'expense' },
+    { code: 'EXP_RENT',   name: 'Rent',                group: 'Expenses',    nature: 'expense' },
+    { code: 'EXP_ELEC',   name: 'Electricity',         group: 'Expenses',    nature: 'expense' },
+    { code: 'EXP_LABOUR', name: 'Labour',              group: 'Expenses',    nature: 'expense' },
+    { code: 'EXP_MKTG',   name: 'Marketing',           group: 'Expenses',    nature: 'expense' },
+    { code: 'EXP_REPAIR', name: 'Repairs',             group: 'Expenses',    nature: 'expense' },
+    { code: 'EXP_MISC',   name: 'Misc',                group: 'Expenses',    nature: 'expense' },
+    { code: 'CAPITAL',    name: 'Owner Capital',       group: 'Equity',      nature: 'equity' }
+  ];
+  for (const a of accounts) {
+    await sql`
+      INSERT INTO accounts (code, name, group_id, nature, is_system, is_cash_bank)
+      VALUES (${a.code}, ${a.name}, ${gid[a.group]}, ${a.nature}, true, ${!!a.cash})
+      ON CONFLICT (code) DO NOTHING
+    `;
+  }
+  console.log(`[JBOS] Seeded chart of accounts (${groups.length} groups, ${accounts.length} accounts).`);
 }
 
 /**

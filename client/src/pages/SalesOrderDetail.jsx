@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { salesOrdersApi, productionApi, employeesApi, karigarsApi } from '../api/client.js';
+import { salesOrdersApi, productionApi, employeesApi, karigarsApi, paymentsApi, invoicesApi } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 
 const ADMIN_ROLES = ['super_admin', 'admin'];
@@ -24,6 +24,8 @@ export default function SalesOrderDetail() {
   const [statusSel, setStatusSel] = useState('');
   const [stageSel, setStageSel] = useState('');
   const [stageNote, setStageNote] = useState('');
+  const [pay, setPay] = useState(null);
+  const [payForm, setPayForm] = useState({ amount: 0, mode: 'cash', paid_at: new Date().toISOString().slice(0, 10), notes: '' });
 
   function flash(kind, text) { setToast({ kind, text }); setTimeout(() => setToast(null), 4000); }
 
@@ -31,6 +33,7 @@ export default function SalesOrderDetail() {
     const o = await salesOrdersApi.get(id).catch(() => null);
     setOrder(o);
     setStatusSel(o?.status || '');
+    paymentsApi.forSalesOrder(id).then(setPay).catch(() => setPay(null));
     if (o?.production_job_id) {
       const j = await productionApi.get(o.production_job_id).catch(() => null);
       setJob(j); setStageSel(j?.stage || '');
@@ -48,6 +51,25 @@ export default function SalesOrderDetail() {
     setBusy(true);
     try { await fn(); flash('ok', okMsg); await reload(); }
     catch (err) { flash('err', err?.response?.data?.error || err.message); }
+    finally { setBusy(false); }
+  }
+
+  async function savePayment(e) {
+    e.preventDefault();
+    if (!(Number(payForm.amount) > 0)) return flash('err', 'Amount must be > 0');
+    await act(() => paymentsApi.createCustomer({ ...payForm, sales_order_id: order.id }), 'Payment recorded');
+    setPayForm({ amount: 0, mode: 'cash', paid_at: new Date().toISOString().slice(0, 10), notes: '' });
+  }
+
+  async function genInvoice() {
+    setBusy(true);
+    try {
+      const inv = await invoicesApi.fromSO(order.id);
+      flash('ok', `Invoice ${inv.invoice_code} created`);
+      const blob = await invoicesApi.pdfBlob(inv.id);
+      const url = URL.createObjectURL(blob); window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err) { flash('err', err?.response?.data?.error || err.message); }
     finally { setBusy(false); }
   }
 
@@ -84,6 +106,41 @@ export default function SalesOrderDetail() {
             </div>
             {order.notes && <p className="text-sm text-ink-muted mt-4 border-t border-gold-light/40 pt-3">{order.notes}</p>}
           </div>
+
+          {/* Payments */}
+          {pay && (
+            <div className="card">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="section-title mb-0">Payments</h2>
+                {isAdmin && <button onClick={genInvoice} disabled={busy} className="btn-secondary">Generate Invoice</button>}
+              </div>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <Mini label="Order Total" v={inr(pay.order_total)} />
+                <Mini label="Paid" v={inr(pay.paid)} tone="success" />
+                <Mini label="Balance" v={inr(pay.balance)} tone={pay.balance > 0 ? 'danger' : 'success'} />
+              </div>
+              {isAdmin && pay.balance > 0 && (
+                <form onSubmit={savePayment} className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end border-t border-gold-light/40 pt-4 mb-4">
+                  <div><label className="label">Amount</label><input className="input" type="number" min="0" value={payForm.amount} onChange={(e) => setPayForm({ ...payForm, amount: +e.target.value })} /></div>
+                  <div><label className="label">Mode</label><select className="input" value={payForm.mode} onChange={(e) => setPayForm({ ...payForm, mode: e.target.value })}>{['cash', 'bank', 'upi', 'card', 'other'].map((m) => <option key={m} value={m}>{m}</option>)}</select></div>
+                  <div><label className="label">Date</label><input className="input" type="date" value={payForm.paid_at} onChange={(e) => setPayForm({ ...payForm, paid_at: e.target.value })} /></div>
+                  <div className="sm:col-span-1"><label className="label">Notes</label><input className="input" value={payForm.notes} onChange={(e) => setPayForm({ ...payForm, notes: e.target.value })} /></div>
+                  <button type="submit" disabled={busy} className="btn-primary justify-center">Record</button>
+                </form>
+              )}
+              <div className="text-[10px] uppercase tracking-widest text-gold mb-2">Payment Timeline</div>
+              {pay.payments.length === 0 ? <p className="text-sm text-ink-muted">No payments yet.</p> : (
+                <ul className="text-sm divide-y divide-gold-light/30">
+                  {pay.payments.map((p) => (
+                    <li key={p.id} className="py-2 flex justify-between gap-3">
+                      <span>{p.payment_code} · <span className="text-ink-muted">{p.mode}</span>{p.notes ? ` · ${p.notes}` : ''}</span>
+                      <span className="whitespace-nowrap"><span className="font-medium text-success">{inr(p.amount)}</span> <span className="text-[10px] text-ink-muted">{p.paid_at}</span></span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           {/* Production pipeline */}
           {job ? (
@@ -173,4 +230,14 @@ export default function SalesOrderDetail() {
 
 function KV({ k, v }) {
   return (<div><div className="text-[10px] uppercase tracking-wider text-ink-muted">{k}</div><div className="text-ink">{v || '—'}</div></div>);
+}
+
+function Mini({ label, v, tone }) {
+  const color = tone === 'success' ? 'text-success' : tone === 'danger' ? 'text-danger' : 'text-ink';
+  return (
+    <div className="card border-l-4 border-l-gold py-3">
+      <div className="text-[10px] uppercase tracking-[2px] text-gold mb-1">{label}</div>
+      <div className={`font-serif text-xl ${color}`}>{v}</div>
+    </div>
+  );
 }

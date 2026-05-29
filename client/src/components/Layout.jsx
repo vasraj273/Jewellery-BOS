@@ -36,6 +36,15 @@ const NAV_GROUPS = [
     ]
   },
   {
+    title: 'Finance',
+    items: [
+      { to: '/accounts', label: 'Accounts',  roles: ADMIN },
+      { to: '/payments', label: 'Payments',  roles: ADMIN },
+      { to: '/expenses', label: 'Expenses',  roles: ADMIN },
+      { to: '/invoices', label: 'Invoices',  roles: ADMIN }
+    ]
+  },
+  {
     title: 'HRMS',
     items: [
       { to: '/attendance',  label: 'Attendance' },

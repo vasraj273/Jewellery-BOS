@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { quotationsApi, leadsApi, customersApi, remindersApi, analyticsApi, attendanceApi, leavesApi, tasksApi, incentivesApi, inventoryApi, salesOrdersApi, productionApi, jobWorksApi, repairsApi } from '../api/client.js';
+import { quotationsApi, leadsApi, customersApi, remindersApi, analyticsApi, attendanceApi, leavesApi, tasksApi, incentivesApi, inventoryApi, salesOrdersApi, productionApi, jobWorksApi, repairsApi, financeApi } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import GoldRateWidget from '../components/GoldRateWidget.jsx';
 import { PageHeader, Tabs } from '../components/ui.jsx';
@@ -11,6 +11,7 @@ const ADMIN_TABS = [
   { key: 'sales', label: 'Sales' },
   { key: 'inventory', label: 'Inventory' },
   { key: 'production', label: 'Production' },
+  { key: 'finance', label: 'Finance' },
   { key: 'hr', label: 'HR' }
 ];
 
@@ -39,6 +40,7 @@ export default function Dashboard() {
   const [prodAlerts, setProdAlerts] = useState(null);
   const [jwSum, setJwSum]   = useState(null);
   const [repSum, setRepSum] = useState(null);
+  const [finSum, setFinSum] = useState(null);
 
   useEffect(() => {
     quotationsApi.list().then((r) => setStats({ total: r.length, recent: r.slice(0, 5) })).catch(() => {});
@@ -60,6 +62,7 @@ export default function Dashboard() {
       productionApi.alerts().then(setProdAlerts).catch(() => {});
       jobWorksApi.dashboard().then(setJwSum).catch(() => {});
       repairsApi.dashboard().then(setRepSum).catch(() => {});
+      financeApi.dashboard().then(setFinSum).catch(() => {});
     } else {
       attendanceApi.myToday().then(setMyAtt).catch(() => {});
       incentivesApi.mySummary().then(setMyInc).catch(() => {});
@@ -82,6 +85,7 @@ export default function Dashboard() {
             {tab === 'sales' && <AdminSales {...{ crm, cust, rem, stats, conv, sales }} />}
             {tab === 'inventory' && <AdminInventory {...{ invSum, invAlerts }} />}
             {tab === 'production' && <AdminProduction {...{ soSum, prodAlerts, repSum, jwSum }} />}
+            {tab === 'finance' && <AdminFinance {...{ finSum }} />}
             {tab === 'hr' && <AdminHR {...{ att, lv, tk, inc, perf }} />}
           </div>
           {/* Persistent footer: live gold + recent quotations */}
@@ -227,6 +231,30 @@ function AdminProduction({ soSum, prodAlerts, repSum, jwSum }) {
           </div>
         </div>
       )}
+    </>
+  );
+}
+
+/* ── Admin: Finance ──────────────────────────────────────────── */
+function AdminFinance({ finSum }) {
+  if (!finSum) return <div className="text-ink-muted text-sm">Loading finance…</div>;
+  return (
+    <>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        <HeroCard label="Revenue Collected" value={inr(finSum.revenue_collected)} to="/payments" />
+        <HeroCard label="Outstanding Receivables" value={inr(finSum.receivables_outstanding)} to="/payments" tone={finSum.receivables_outstanding > 0 ? 'warn' : undefined} />
+        <HeroCard label="Supplier Payables" value={inr(finSum.supplier_payables)} to="/payments" tone={finSum.supplier_payables > 0 ? 'warn' : undefined} />
+        <HeroCard label="Cash Balance" value={inr(finSum.cash_balance)} to="/accounts" />
+      </div>
+      <SectionLabel>Cash Flow & Billing</SectionLabel>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+        <StatCard label="Cash In"        value={inr(finSum.cash_in)} to="/payments" />
+        <StatCard label="Cash Out"       value={inr(finSum.cash_out)} to="/expenses" />
+        <StatCard label="Net Cash"       value={inr(finSum.net_cash)} highlight={finSum.net_cash < 0} />
+        <StatCard label="Expenses"       value={inr(finSum.expenses_total)} to="/expenses" />
+        <StatCard label="Invoiced"       value={inr(finSum.invoiced)} to="/invoices" />
+        <StatCard label="Invoices"       value={finSum.invoice_count} to="/invoices" />
+      </div>
     </>
   );
 }

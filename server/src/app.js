@@ -30,6 +30,11 @@ import productionRoutes from './routes/production.routes.js';
 import karigarsRoutes from './routes/karigars.routes.js';
 import jobWorksRoutes from './routes/jobWorks.routes.js';
 import repairsRoutes from './routes/repairs.routes.js';
+import accountsRoutes from './routes/accounts.routes.js';
+import paymentsRoutes from './routes/payments.routes.js';
+import expensesRoutes from './routes/expenses.routes.js';
+import invoicesRoutes from './routes/invoices.routes.js';
+import financeRoutes from './routes/finance.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { requireAuth } from './middleware/auth.middleware.js';
 
@@ -83,6 +88,12 @@ export function createApp() {
   app.use('/api/karigars',     karigarsRoutes);
   app.use('/api/job-works',    jobWorksRoutes);
   app.use('/api/repairs',      repairsRoutes);
+  // M10 — Finance + Accounts + Billing
+  app.use('/api/accounts',     accountsRoutes);
+  app.use('/api/payments',     paymentsRoutes);
+  app.use('/api/expenses',     expensesRoutes);
+  app.use('/api/invoices',     invoicesRoutes);
+  app.use('/api/finance',      financeRoutes);
 
   app.use(errorHandler);
 

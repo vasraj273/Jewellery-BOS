@@ -290,3 +290,42 @@ export const repairsApi = {
   update:    (id, payload) => api.put(`/repairs/${id}`, payload).then(r => r.data.data),
   dashboard: ()            => api.get('/repairs/dashboard').then(r => r.data.data)
 };
+
+// ── M10 — Finance + Accounts + Billing ────────────────────────
+export const accountsApi = {
+  groups:        ()              => api.get('/accounts/groups').then(r => r.data.data),
+  list:          (params = {})   => api.get('/accounts', { params }).then(r => r.data.data),
+  create:        (payload)       => api.post('/accounts', payload).then(r => r.data.data),
+  update:        (id, payload)   => api.put(`/accounts/${id}`, payload).then(r => r.data.data),
+  deactivate:    (id)            => api.delete(`/accounts/${id}`).then(r => r.data.data),
+  journals:      (params = {})   => api.get('/accounts/journals', { params }).then(r => r.data.data),
+  journal:       (id)            => api.get(`/accounts/journals/${id}`).then(r => r.data.data),
+  createJournal: (payload)       => api.post('/accounts/journals', payload).then(r => r.data.data),
+  ledger:        (accountId, params = {}) => api.get(`/accounts/ledger/${accountId}`, { params }).then(r => r.data.data)
+};
+
+export const paymentsApi = {
+  forSalesOrder:   (soId)        => api.get(`/payments/sales-order/${soId}`).then(r => r.data.data),
+  customerList:    (params = {}) => api.get('/payments/customer', { params }).then(r => r.data.data),
+  supplierList:    (params = {}) => api.get('/payments/supplier', { params }).then(r => r.data.data),
+  supplierSummary: ()            => api.get('/payments/supplier-summary').then(r => r.data.data),
+  forSupplier:     (id)          => api.get(`/payments/supplier/${id}`).then(r => r.data.data),
+  createCustomer:  (payload)     => api.post('/payments/customer', payload).then(r => r.data.data),
+  createSupplier:  (payload)     => api.post('/payments/supplier', payload).then(r => r.data.data)
+};
+
+export const expensesApi = {
+  list:   (params = {}) => api.get('/expenses', { params }).then(r => r.data.data),
+  create: (payload)     => api.post('/expenses', payload).then(r => r.data.data)
+};
+
+export const invoicesApi = {
+  list:        (params = {}) => api.get('/invoices', { params }).then(r => r.data.data),
+  get:         (id)          => api.get(`/invoices/${id}`).then(r => r.data.data),
+  fromSO:      (soId, payload = {}) => api.post(`/invoices/from-so/${soId}`, payload).then(r => r.data.data),
+  pdfBlob:     (id)          => api.get(`/invoices/${id}/pdf`, { responseType: 'blob' }).then(r => r.data)
+};
+
+export const financeApi = {
+  dashboard: () => api.get('/finance/dashboard').then(r => r.data.data)
+};

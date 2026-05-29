@@ -27,6 +27,10 @@ import Production from './pages/Production.jsx';
 import Karigars from './pages/Karigars.jsx';
 import JobWorks from './pages/JobWorks.jsx';
 import Repairs from './pages/Repairs.jsx';
+import Accounts from './pages/Accounts.jsx';
+import Payments from './pages/Payments.jsx';
+import Expenses from './pages/Expenses.jsx';
+import Invoices from './pages/Invoices.jsx';
 import UsersAdmin from './pages/admin/Users.jsx';
 import SettingsAdmin from './pages/admin/Settings.jsx';
 import MastersAdmin from './pages/admin/Masters.jsx';
@@ -69,6 +73,10 @@ export const router = createBrowserRouter([
       { path: 'job-works',                element: <RequireRole roles={ADMIN_ROLES}><JobWorks /></RequireRole> },
       { path: 'karigars',                 element: <RequireRole roles={ADMIN_ROLES}><Karigars /></RequireRole> },
       { path: 'repairs',                  element: <RequireRole roles={ADMIN_ROLES}><Repairs /></RequireRole> },
+      { path: 'accounts',                 element: <RequireRole roles={ADMIN_ROLES}><Accounts /></RequireRole> },
+      { path: 'payments',                 element: <RequireRole roles={ADMIN_ROLES}><Payments /></RequireRole> },
+      { path: 'expenses',                 element: <RequireRole roles={ADMIN_ROLES}><Expenses /></RequireRole> },
+      { path: 'invoices',                 element: <RequireRole roles={ADMIN_ROLES}><Invoices /></RequireRole> },
       { path: 'admin/users',      element: <RequireRole roles={ADMIN_ROLES}><UsersAdmin /></RequireRole> },
       { path: 'admin/settings',   element: <RequireRole roles={ADMIN_ROLES}><SettingsAdmin /></RequireRole> },
       { path: 'admin/masters',    element: <RequireRole roles={ADMIN_ROLES}><MastersAdmin /></RequireRole> },
