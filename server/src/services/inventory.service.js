@@ -20,12 +20,15 @@ const MOVEMENT_STATUS = {
 
 const num = (v) => (Number.isFinite(+v) ? +v : 0);
 
+// Columns qualified with the `i.` alias — the list query LEFT JOINs suppliers,
+// which shares column names (name, created_at, …) with inventory_items, so bare
+// references would be ambiguous.
 const SORT_MAP = {
-  newest:   'created_at DESC',
-  oldest:   'created_at ASC',
-  sku_asc:  'sku ASC',
-  name_asc: 'lower(name) ASC',
-  weight_desc: 'net_weight DESC NULLS LAST'
+  newest:   'i.created_at DESC',
+  oldest:   'i.created_at ASC',
+  sku_asc:  'i.sku ASC',
+  name_asc: 'lower(i.name) ASC',
+  weight_desc: 'i.net_weight DESC NULLS LAST'
 };
 
 // ── Valuation ────────────────────────────────────────────────
@@ -66,14 +69,17 @@ function withValuation(row, ratesMap) {
 export async function list(filters = {}) {
   const sql = getDb();
 
+  // All filter columns are qualified with i.* — suppliers (LEFT JOINed below)
+  // shares column names (status has no clash but name/category/is_active do),
+  // so bare references would raise "column reference ... is ambiguous".
   const statusClause = filters.status
-    ? sql`AND status = ${filters.status}`
-    : (filters.include_archived === '1' ? sql`` : sql`AND status <> 'archived'`);
-  const categoryClause = filters.category ? sql`AND category = ${filters.category}` : sql``;
-  const supplierClause = filters.supplier_id ? sql`AND supplier_id = ${Number(filters.supplier_id)}` : sql``;
+    ? sql`AND i.status = ${filters.status}`
+    : (filters.include_archived === '1' ? sql`` : sql`AND i.status <> 'archived'`);
+  const categoryClause = filters.category ? sql`AND i.category = ${filters.category}` : sql``;
+  const supplierClause = filters.supplier_id ? sql`AND i.supplier_id = ${Number(filters.supplier_id)}` : sql``;
   const search = (filters.search || '').trim();
   const searchClause = search
-    ? sql`AND (sku ILIKE ${'%' + search + '%'} OR name ILIKE ${'%' + search + '%'} OR design_code ILIKE ${'%' + search + '%'})`
+    ? sql`AND (i.sku ILIKE ${'%' + search + '%'} OR i.name ILIKE ${'%' + search + '%'} OR i.design_code ILIKE ${'%' + search + '%'})`
     : sql``;
 
   const sortKey = SORT_MAP[filters.sort] ? filters.sort : 'newest';
@@ -84,7 +90,7 @@ export async function list(filters = {}) {
     SELECT i.*, s.name AS supplier_name
     FROM inventory_items i
     LEFT JOIN suppliers s ON s.id = i.supplier_id
-    WHERE is_active = true ${statusClause} ${categoryClause} ${supplierClause} ${searchClause}
+    WHERE i.is_active = true ${statusClause} ${categoryClause} ${supplierClause} ${searchClause}
     ORDER BY ${sql.unsafe(orderBy)}
     LIMIT ${limit}
   `;
