@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { quotationsApi, leadsApi, customersApi, remindersApi, analyticsApi, attendanceApi, leavesApi, tasksApi, incentivesApi, inventoryApi } from '../api/client.js';
+import { quotationsApi, leadsApi, customersApi, remindersApi, analyticsApi, attendanceApi, leavesApi, tasksApi, incentivesApi, inventoryApi, salesOrdersApi, productionApi, jobWorksApi, repairsApi } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import GoldRateWidget from '../components/GoldRateWidget.jsx';
 
@@ -25,6 +25,10 @@ export default function Dashboard() {
   const [myInc, setMyInc]   = useState({ total: 0, pending: 0, paid: 0 });
   const [invSum, setInvSum] = useState(null);
   const [invAlerts, setInvAlerts] = useState(null);
+  const [soSum, setSoSum]   = useState(null);
+  const [prodAlerts, setProdAlerts] = useState(null);
+  const [jwSum, setJwSum]   = useState(null);
+  const [repSum, setRepSum] = useState(null);
 
   useEffect(() => {
     // Scoped server-side: sales-exec receives only their own figures.
@@ -43,6 +47,10 @@ export default function Dashboard() {
       incentivesApi.dashboard().then(setInc).catch(() => {});
       inventoryApi.summary().then(setInvSum).catch(() => {});
       inventoryApi.alerts().then(setInvAlerts).catch(() => {});
+      salesOrdersApi.dashboard().then(setSoSum).catch(() => {});
+      productionApi.alerts().then(setProdAlerts).catch(() => {});
+      jobWorksApi.dashboard().then(setJwSum).catch(() => {});
+      repairsApi.dashboard().then(setRepSum).catch(() => {});
     } else {
       // Sales-exec self-scoped HR.
       attendanceApi.myToday().then(setMyAtt).catch(() => {});
@@ -130,6 +138,16 @@ export default function Dashboard() {
                   </ul>
                 )}
               </div>
+            </div>
+          )}
+          {/* Orders / production / service widgets (org-wide) */}
+          {(soSum || prodAlerts || jwSum || repSum) && (
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-6">
+              <StatCard label="Active Orders"      value={soSum?.active_orders || 0} to="/sales-orders" />
+              <StatCard label="Delivery Due"       value={soSum?.delivery_due || 0} to="/sales-orders" highlight={(soSum?.delivery_due || 0) > 0} hint="next 7 days" />
+              <StatCard label="Delayed Production"  value={prodAlerts?.delayed_count || 0} to="/production" highlight={(prodAlerts?.delayed_count || 0) > 0} />
+              <StatCard label="Repairs Pending"    value={repSum?.pending || 0} to="/repairs" highlight={(repSum?.overdue || 0) > 0} hint={repSum?.overdue ? `${repSum.overdue} overdue` : undefined} />
+              <StatCard label="Job Work Pending"   value={jwSum?.pending || 0} to="/job-works" hint={jwSum?.payment_due_total ? `${inr(jwSum.payment_due_total)} due` : undefined} highlight={(jwSum?.payment_due_total || 0) > 0} />
             </div>
           )}
         </>

@@ -245,3 +245,48 @@ export const purchasesApi = {
   get:    (id)          => api.get(`/purchases/${id}`).then(r => r.data.data),
   create: (payload)     => api.post('/purchases', payload).then(r => r.data.data)
 };
+
+// ── M9 — Sales Orders + Production + Job Work + Repairs ────────
+export const salesOrdersApi = {
+  list:       (params = {}) => api.get('/sales-orders', { params }).then(r => r.data.data),
+  get:        (id)          => api.get(`/sales-orders/${id}`).then(r => r.data.data),
+  fromQuote:  (quoteId, payload = {}) => api.post(`/sales-orders/from-quote/${quoteId}`, payload).then(r => r.data.data),
+  create:     (payload)     => api.post('/sales-orders', payload).then(r => r.data.data),
+  update:     (id, payload) => api.put(`/sales-orders/${id}`, payload).then(r => r.data.data),
+  setStatus:  (id, status)  => api.put(`/sales-orders/${id}/status`, { status }).then(r => r.data.data),
+  dashboard:  ()            => api.get('/sales-orders/dashboard').then(r => r.data.data)
+};
+
+export const productionApi = {
+  list:          (params = {}) => api.get('/production', { params }).then(r => r.data.data),
+  get:           (id)          => api.get(`/production/${id}`).then(r => r.data.data),
+  setStage:      (id, payload) => api.put(`/production/${id}/stage`, payload).then(r => r.data.data),
+  update:        (id, payload) => api.put(`/production/${id}`, payload).then(r => r.data.data),
+  finishedStock: (id, payload) => api.post(`/production/${id}/finished-stock`, payload).then(r => r.data.data),
+  alerts:        ()            => api.get('/production/alerts').then(r => r.data.data)
+};
+
+export const karigarsApi = {
+  list:       (params = {}) => api.get('/karigars', { params }).then(r => r.data.data),
+  get:        (id)          => api.get(`/karigars/${id}`).then(r => r.data.data),
+  create:     (payload)     => api.post('/karigars', payload).then(r => r.data.data),
+  update:     (id, payload) => api.put(`/karigars/${id}`, payload).then(r => r.data.data),
+  deactivate: (id)          => api.delete(`/karigars/${id}`).then(r => r.data.data),
+  activate:   (id)          => api.put(`/karigars/${id}/activate`).then(r => r.data.data)
+};
+
+export const jobWorksApi = {
+  list:      (params = {}) => api.get('/job-works', { params }).then(r => r.data.data),
+  get:       (id)          => api.get(`/job-works/${id}`).then(r => r.data.data),
+  create:    (payload)     => api.post('/job-works', payload).then(r => r.data.data),
+  update:    (id, payload) => api.put(`/job-works/${id}`, payload).then(r => r.data.data),
+  dashboard: ()            => api.get('/job-works/dashboard').then(r => r.data.data)
+};
+
+export const repairsApi = {
+  list:      (params = {}) => api.get('/repairs', { params }).then(r => r.data.data),
+  get:       (id)          => api.get(`/repairs/${id}`).then(r => r.data.data),
+  create:    (payload)     => api.post('/repairs', payload).then(r => r.data.data),
+  update:    (id, payload) => api.put(`/repairs/${id}`, payload).then(r => r.data.data),
+  dashboard: ()            => api.get('/repairs/dashboard').then(r => r.data.data)
+};

@@ -1,15 +1,31 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { quotationsApi } from '../api/client.js';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { quotationsApi, salesOrdersApi } from '../api/client.js';
 import { openQuotationPdf } from '../api/pdfActions.js';
 import SendWhatsAppButton from '../components/SendWhatsAppButton.jsx';
 
 export default function QuotationPreview() {
   const { quoteId } = useParams();
+  const navigate = useNavigate();
   const [q, setQ] = useState(null);
   const [html, setHtml] = useState('');
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [converting, setConverting] = useState(false);
+
+  async function handleConvert() {
+    if (converting) return;
+    setConverting(true);
+    setError('');
+    try {
+      const so = await salesOrdersApi.fromQuote(quoteId, {});
+      navigate(`/sales-orders/${so.id}`);
+    } catch (e) {
+      setError(e?.response?.data?.error || e.message || 'Conversion failed');
+    } finally {
+      setConverting(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +90,13 @@ export default function QuotationPreview() {
             className="btn-primary flex-1 sm:flex-none justify-center min-w-[120px]"
           >
             {downloading ? 'Preparing…' : 'Download PDF'}
+          </button>
+          <button
+            onClick={handleConvert}
+            disabled={converting}
+            className="btn-secondary flex-1 sm:flex-none justify-center min-w-[150px]"
+          >
+            {converting ? 'Converting…' : 'Convert to Order'}
           </button>
           <div className="flex-1 sm:flex-none min-w-[140px]">
             <SendWhatsAppButton

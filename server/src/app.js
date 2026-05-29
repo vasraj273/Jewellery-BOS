@@ -25,6 +25,11 @@ import hrCalendarRoutes from './routes/hrCalendar.routes.js';
 import suppliersRoutes from './routes/suppliers.routes.js';
 import inventoryRoutes from './routes/inventory.routes.js';
 import purchasesRoutes from './routes/purchases.routes.js';
+import salesOrdersRoutes from './routes/salesOrders.routes.js';
+import productionRoutes from './routes/production.routes.js';
+import karigarsRoutes from './routes/karigars.routes.js';
+import jobWorksRoutes from './routes/jobWorks.routes.js';
+import repairsRoutes from './routes/repairs.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { requireAuth } from './middleware/auth.middleware.js';
 
@@ -72,6 +77,12 @@ export function createApp() {
   app.use('/api/suppliers',  suppliersRoutes);
   app.use('/api/inventory',  inventoryRoutes);
   app.use('/api/purchases',  purchasesRoutes);
+  // M9 — Sales Orders + Production + Job Work + Repairs
+  app.use('/api/sales-orders', salesOrdersRoutes);
+  app.use('/api/production',    productionRoutes);
+  app.use('/api/karigars',     karigarsRoutes);
+  app.use('/api/job-works',    jobWorksRoutes);
+  app.use('/api/repairs',      repairsRoutes);
 
   app.use(errorHandler);
 
