@@ -9,6 +9,23 @@ const __dirname = path.dirname(__filename);
 
 const TEMPLATE_DIR = path.resolve(__dirname, '..', '..', process.env.TEMPLATE_DIR || '../templates');
 const TEMPLATE_FILE = path.join(TEMPLATE_DIR, 'quotation.template.html');
+const UPLOAD_DIR = path.resolve(__dirname, '..', '..', process.env.UPLOAD_DIR || '../uploads');
+
+// Default logo when no company logo is configured (original luxury star mark).
+const DEFAULT_LOGO_SVG = `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <polygon points="14,1 17.5,9.5 27,11 20.5,17.5 22,27 14,23 6,27 7.5,17.5 1,11 10.5,9.5" stroke="#C5A028" stroke-width="0.8" fill="#F9F4E8" stroke-linejoin="round"/>
+  <circle cx="14" cy="14" r="4" stroke="#C5A028" stroke-width="0.6" fill="none"/>
+  <circle cx="14" cy="14" r="1.5" fill="#C5A028"/>
+</svg>`;
+
+// Placeholder icon shown in the product showcase when no image is attached.
+const PRODUCT_PLACEHOLDER_SVG = `<div class="img-placeholder-icon">
+  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="3" width="42" height="42" rx="2" stroke="#C5A028" stroke-width="0.8"/>
+    <circle cx="15" cy="15" r="5" stroke="#C5A028" stroke-width="0.8"/>
+    <path d="M3 33 L14 21 L22 29 L32 17 L45 33" stroke="#C5A028" stroke-width="0.8" stroke-linejoin="round"/>
+  </svg>
+</div>`;
 
 let cached = null;
 function loadTemplate() {
@@ -52,7 +69,9 @@ export async function renderQuotationHtml(q) {
     product_name:        q.product_name || '',
     product_category:    q.product_category || '',
     product_description: q.product_description || '',
-    product_image:       buildImageTag(q.product_image_path),
+    product_image:           buildImageTag(q.product_image_path),
+    product_image_placeholder: q.product_image_path ? '' : PRODUCT_PLACEHOLDER_SVG,
+    company_logo:        buildLogoTag(cs.company_logo_url),
 
     // specs
     metal_type:     q.metal_type || '—',
@@ -116,7 +135,36 @@ function formatMakingRate(q) {
 }
 
 function buildImageTag(imgPath) {
-  if (!imgPath) return '';
-  const src = imgPath.startsWith('http') || imgPath.startsWith('/') ? imgPath : `/uploads/${imgPath}`;
+  const src = resolveImageSrc(imgPath);
+  if (!src) return '';
   return `<img src="${src}" alt="Product" style="max-width:100%;max-height:160px;object-fit:contain;" />`;
+}
+
+function buildLogoTag(logoUrl) {
+  const src = resolveImageSrc(logoUrl);
+  if (!src) return DEFAULT_LOGO_SVG;
+  return `<img src="${src}" alt="Logo" style="max-width:48px;max-height:48px;object-fit:contain;" />`;
+}
+
+/**
+ * Resolve a stored image reference into something Puppeteer can render from a
+ * `setContent()` page (which has no base URL). External http(s) URLs pass
+ * through; locally-uploaded files are inlined as base64 data URIs so they
+ * render regardless of server origin / network reachability.
+ */
+function resolveImageSrc(ref) {
+  if (!ref) return '';
+  if (/^https?:\/\//i.test(ref) || ref.startsWith('data:')) return ref;
+  // Local upload: strip a leading "/uploads/" (or "uploads/") to get the filename.
+  const filename = path.basename(ref);
+  try {
+    const filePath = path.join(UPLOAD_DIR, filename);
+    const buf = fs.readFileSync(filePath);
+    const ext = path.extname(filename).slice(1).toLowerCase();
+    const mime = ext === 'jpg' ? 'jpeg' : (ext || 'png');
+    return `data:image/${mime};base64,${buf.toString('base64')}`;
+  } catch {
+    // File missing (e.g. wiped on a Render redeploy) — degrade gracefully.
+    return '';
+  }
 }

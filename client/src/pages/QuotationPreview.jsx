@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { quotationsApi, salesOrdersApi } from '../api/client.js';
 import { openQuotationPdf } from '../api/pdfActions.js';
 import SendWhatsAppButton from '../components/SendWhatsAppButton.jsx';
+import { ImageUpload } from './CreateQuotation.jsx';
 
 export default function QuotationPreview() {
   const { quoteId } = useParams();
@@ -69,6 +70,18 @@ export default function QuotationPreview() {
 
   const reload = () => quotationsApi.get(quoteId).then(setQ).catch(() => {});
 
+  async function setImage(url) {
+    setError('');
+    try {
+      const updated = await quotationsApi.updateImage(quoteId, url);
+      setQ(updated);
+      // Re-render the preview so the new image is reflected immediately.
+      setHtml(await quotationsApi.previewHtml(quoteId));
+    } catch (e) {
+      setError(e?.response?.data?.error || e.message || 'Image update failed');
+    }
+  }
+
   return (
     <div>
       <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
@@ -108,6 +121,11 @@ export default function QuotationPreview() {
           </div>
         </div>
       </header>
+
+      <div className="card mb-4">
+        <div className="text-[10px] uppercase tracking-[2.5px] text-gold mb-2">Product Image / CAD Render</div>
+        <ImageUpload value={q.product_image_path} onChange={setImage} />
+      </div>
 
       <div className="card p-0 overflow-hidden bg-white">
         <iframe

@@ -21,8 +21,10 @@ export default function UsersAdmin() {
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState(null);
   const [resetting, setResetting] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const [toast, setToast] = useState(null);
   const canCreateSuper = me?.role === 'super_admin';
+  const canDelete = me?.role === 'super_admin';
 
   useEffect(() => { reload(); }, []);
   async function reload() {
@@ -79,9 +81,14 @@ export default function UsersAdmin() {
                 <td className="px-4 py-3"><RoleBadge role={u.role} /></td>
                 <td className="px-4 py-3">{u.is_active ? <span className="text-green-700 text-xs uppercase tracking-widest">Active</span> : <span className="text-red-700 text-xs uppercase tracking-widest">Disabled</span>}</td>
                 <td className="px-4 py-3 text-ink-muted text-xs">{u.last_login_at ? new Date(u.last_login_at).toLocaleString('en-IN') : '—'}</td>
-                <td className="px-4 py-3 text-right space-x-3 whitespace-nowrap">
-                  <button onClick={() => setEditing(u)} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Edit</button>
-                  <button onClick={() => setResetting(u)} className="text-xs uppercase tracking-widest text-gold-dark hover:text-gold">Reset password</button>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => setEditing(u)} className="action-btn">Edit</button>
+                    <button onClick={() => setResetting(u)} className="action-btn">Reset password</button>
+                    {canDelete && u.id !== me?.id && (
+                      <button onClick={() => setDeleting(u)} className="action-btn-danger">Delete</button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -115,8 +122,11 @@ export default function UsersAdmin() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2 pt-3 border-t border-gold-light/40">
-              <button onClick={() => setEditing(u)} className="flex-1 min-w-[110px] text-xs uppercase tracking-widest px-3 py-2 border border-gold-light text-ink hover:border-gold">Edit</button>
-              <button onClick={() => setResetting(u)} className="flex-1 min-w-[110px] text-xs uppercase tracking-widest px-3 py-2 border border-gold-light text-ink hover:border-gold">Reset password</button>
+              <button onClick={() => setEditing(u)} className="action-btn flex-1 min-w-[100px] py-2">Edit</button>
+              <button onClick={() => setResetting(u)} className="action-btn flex-1 min-w-[100px] py-2">Reset password</button>
+              {canDelete && u.id !== me?.id && (
+                <button onClick={() => setDeleting(u)} className="action-btn-danger flex-1 min-w-[100px] py-2">Delete</button>
+              )}
             </div>
           </div>
         ))}
@@ -145,6 +155,14 @@ export default function UsersAdmin() {
           user={resetting}
           onClose={() => setResetting(null)}
           onDone={() => { setResetting(null); flash('ok', `Password reset for ${resetting.email}`); }}
+          onError={(msg) => flash('err', msg)}
+        />
+      )}
+      {deleting && (
+        <DeleteModal
+          user={deleting}
+          onClose={() => setDeleting(null)}
+          onDeleted={(email) => { setDeleting(null); flash('ok', `Deleted ${email}`); reload(); }}
           onError={(msg) => flash('err', msg)}
         />
       )}
@@ -275,6 +293,47 @@ function ResetPasswordModal({ user, onClose, onDone, onError }) {
           <button type="submit" disabled={busy} className="btn-primary">{busy ? 'Resetting…' : 'Reset'}</button>
         </div>
       </form>
+    </ModalShell>
+  );
+}
+
+function DeleteModal({ user, onClose, onDeleted, onError }) {
+  const [purge, setPurge] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function confirm() {
+    setBusy(true);
+    try { await usersApi.remove(user.id, purge); onDeleted(user.email); }
+    catch (err) { onError(err?.response?.data?.error || err.message || 'Delete failed'); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <ModalShell title={`Delete · ${user.email}`} onClose={onClose}>
+      <div className="space-y-4">
+        <p className="text-sm text-ink-mid">
+          Removes <span className="font-medium text-ink">{user.full_name}</span> from the Users list and revokes
+          their portal access. By default their records (quotations, CRM, employee profile &amp; HR history) are
+          <span className="font-medium text-ink"> kept</span>. This cannot be undone.
+        </p>
+        <label className="flex items-start gap-3 text-sm bg-danger-bg border border-danger-border rounded p-3">
+          <input type="checkbox" className="mt-0.5" checked={purge} onChange={(e) => setPurge(e.target.checked)} />
+          <span>
+            <span className="font-medium text-danger">Demo / sample account — delete every record too</span>
+            <span className="block text-xs text-ink-muted mt-1">
+              Also permanently wipes their quotations, leads, customers and employee/HR data so no trace remains
+              in History, Shifts, Attendance or any list. Use only for test accounts.
+            </span>
+          </span>
+        </label>
+        <div className="flex gap-3 justify-end pt-2 border-t border-gold-light/40">
+          <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+          <button type="button" onClick={confirm} disabled={busy}
+            className="btn bg-danger text-white border border-danger hover:bg-red-800 hover:-translate-y-px">
+            {busy ? 'Deleting…' : (purge ? 'Delete + Purge' : 'Delete User')}
+          </button>
+        </div>
+      </div>
     </ModalShell>
   );
 }

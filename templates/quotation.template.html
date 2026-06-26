@@ -187,11 +187,7 @@ body { display: flex; justify-content: center; align-items: flex-start; min-heig
       <div class="logo-block">
         <div class="logo-row">
           <div class="logo-mark">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <polygon points="14,1 17.5,9.5 27,11 20.5,17.5 22,27 14,23 6,27 7.5,17.5 1,11 10.5,9.5" stroke="#C5A028" stroke-width="0.8" fill="#F9F4E8" stroke-linejoin="round"/>
-              <circle cx="14" cy="14" r="4" stroke="#C5A028" stroke-width="0.6" fill="none"/>
-              <circle cx="14" cy="14" r="1.5" fill="#C5A028"/>
-            </svg>
+            {{company_logo}}
           </div>
           <div>
             <div class="company-name">{{company_name}}</div>
@@ -261,13 +257,7 @@ body { display: flex; justify-content: center; align-items: flex-start; min-heig
         <div class="product-image-area">
           <div class="img-corner-br"></div>
           {{product_image}}
-          <div class="img-placeholder-icon">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="3" width="42" height="42" rx="2" stroke="#C5A028" stroke-width="0.8"/>
-              <circle cx="15" cy="15" r="5" stroke="#C5A028" stroke-width="0.8"/>
-              <path d="M3 33 L14 21 L22 29 L32 17 L45 33" stroke="#C5A028" stroke-width="0.8" stroke-linejoin="round"/>
-            </svg>
-          </div>
+          {{product_image_placeholder}}
         </div>
 
         <div class="product-details">

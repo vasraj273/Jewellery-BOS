@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { quotationsApi, ratesApi, usersApi, mastersApi, leadsApi, inventoryApi } from '../api/client.js';
+import { quotationsApi, ratesApi, usersApi, mastersApi, leadsApi, inventoryApi, uploadsApi, assetUrl } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import GoldRateWidget from '../components/GoldRateWidget.jsx';
 
@@ -24,6 +24,7 @@ const INITIAL = {
   diamond_clarity: '', diamond_color: '',
   gemstone: '', gemstone_carat: 0,
   hallmark: 'BIS Hallmarked', certification: '', setting_style: '',
+  product_image_path: '',
   gold_rate_per_gram: 5850, diamond_rate_per_carat: 85000, gemstone_rate_per_carat: 0,
   making_charge_type: 'per_gram', making_charge_value: 1200,
   hallmark_charge: 250, certification_charge: 0, shipping_charge: 500,
@@ -344,6 +345,10 @@ export default function CreateQuotation() {
               <Field label="Certification"><input className="input" value={form.certification} onChange={(e) => update('certification', e.target.value)} /></Field>
               <Field label="Setting Style"><input className="input" value={form.setting_style} onChange={(e) => update('setting_style', e.target.value)} /></Field>
             </Grid>
+            <div className="mt-4 pt-4 border-t border-gold-light/40">
+              <label className="label">Product Image / CAD Render</label>
+              <ImageUpload value={form.product_image_path} onChange={(v) => update('product_image_path', v)} />
+            </div>
           </Section>
 
           <Section title="Rates & Charges">
@@ -476,6 +481,47 @@ export default function CreateQuotation() {
           <iframe title="Preview" srcDoc={previewHtml} className="flex-1 w-full bg-white" />
         </div>
       )}
+    </div>
+  );
+}
+
+export function ImageUpload({ value, onChange }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+
+  async function upload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBusy(true); setErr(null);
+    try {
+      const { url } = await uploadsApi.image(file);
+      onChange(url);
+    } catch (ex) {
+      setErr(ex?.response?.data?.error || ex.message || 'Upload failed');
+    } finally {
+      setBusy(false);
+      e.target.value = '';
+    }
+  }
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-4 sm:items-start">
+      <div className="w-24 h-24 shrink-0 border border-gold-light/60 rounded flex items-center justify-center bg-off-white overflow-hidden">
+        {value
+          ? <img src={assetUrl(value)} alt="Product" className="max-w-full max-h-full object-contain" />
+          : <span className="text-[10px] uppercase tracking-widest text-ink-muted text-center px-2">No image</span>}
+      </div>
+      <div className="flex-1 space-y-2">
+        <div className="flex flex-wrap gap-2">
+          <label className="action-btn cursor-pointer">
+            {busy ? 'Uploading…' : (value ? 'Replace image' : 'Upload image')}
+            <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={busy} onChange={upload} />
+          </label>
+          {value && <button type="button" onClick={() => onChange('')} className="action-btn-danger">Remove</button>}
+        </div>
+        <div className="text-[10px] text-ink-muted">PNG/JPG/WEBP, up to 5 MB. Shown in the “Featured Creation” area of the quotation PDF.</div>
+        {err && <div className="text-[11px] text-danger">{err}</div>}
+      </div>
     </div>
   );
 }

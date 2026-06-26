@@ -125,6 +125,22 @@ export async function remove(req, res, next) {
   } catch (e) { next(e); }
 }
 
+export async function updateImage(req, res, next) {
+  try {
+    const updated = await quotationService.updateImage(
+      req.params.quoteId, req.body?.product_image_path, req.user
+    );
+    if (!updated) return res.status(404).json({ success: false, error: 'Not found' });
+    audit.record({
+      actor: req.user, action: 'quotation.image.update',
+      entityType: 'quotation', entityId: req.params.quoteId,
+      metadata: { product_image_path: updated.product_image_path || null },
+      req
+    });
+    res.json({ success: true, data: updated });
+  } catch (e) { next(e); }
+}
+
 export async function sendWhatsApp(req, res, next) {
   try {
     // Scope check first so sales_executive can't trigger WhatsApp on someone else's quote.

@@ -18,6 +18,10 @@
   .btn-secondary { @apply btn bg-white text-ink border border-gold-light hover:border-gold hover:bg-gold-pale/40 hover:-translate-y-px; }
   .btn-ghost { @apply btn bg-transparent text-ink-mid hover:text-gold hover:bg-gold-pale/50; }
 
+  /* ── Compact row-action buttons (tables / cards) ───────────── */
+  .action-btn { @apply inline-flex items-center justify-center text-[11px] uppercase tracking-widest px-3 py-1.5 rounded border border-gold-light text-ink-mid bg-white transition-colors hover:border-gold hover:text-gold hover:bg-gold-pale/40 whitespace-nowrap; }
+  .action-btn-danger { @apply inline-flex items-center justify-center text-[11px] uppercase tracking-widest px-3 py-1.5 rounded border border-danger-border text-danger bg-white transition-colors hover:bg-danger-bg hover:border-danger whitespace-nowrap; }
+
   /* ── Cards — softer border, subtle shadow, rounded ─────────── */
   .card { @apply bg-white border border-gold-light/40 rounded-xl shadow-card p-5 sm:p-6; }
   .card-hover { @apply transition-all duration-200 hover:shadow-card-hover hover:border-gold-light; }

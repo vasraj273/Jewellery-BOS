@@ -10,7 +10,9 @@
     "start": "node src/index.js",
     "db:init": "node src/database/init.js",
     "db:seed": "node src/database/seed.js",
-    "user:bootstrap": "node ./scripts/bootstrap-user.js"
+    "user:bootstrap": "node ./scripts/bootstrap-user.js",
+    "report:owners": "node ./scripts/report-data-by-owner.js",
+    "purge:users": "node ./scripts/purge-users.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

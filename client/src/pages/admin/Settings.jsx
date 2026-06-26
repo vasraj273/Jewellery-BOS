@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { settingsApi } from '../../api/client.js';
+import { settingsApi, uploadsApi, assetUrl } from '../../api/client.js';
 
 const TABS = [
   { key: 'business',  label: 'Business' },
@@ -81,8 +81,53 @@ function BusinessTab({ data, set }) {
         <Field label="Contact (phone · email)"><input className="input" value={data.company_contact || ''} onChange={(e) => set('company_contact', e.target.value)} /></Field>
         <Field label="Website / Socials"><input className="input" value={data.company_web || ''} onChange={(e) => set('company_web', e.target.value)} /></Field>
         <Field label="GSTIN line (printed)"><input className="input" value={data.company_gstin || ''} onChange={(e) => set('company_gstin', e.target.value)} /></Field>
-        <Field label="Logo URL (optional)"><input className="input" value={data.company_logo_url || ''} onChange={(e) => set('company_logo_url', e.target.value)} /></Field>
+        <Field label="Company Logo" full>
+          <LogoField value={data.company_logo_url} onChange={(v) => set('company_logo_url', v)} />
+        </Field>
       </Grid>
+    </div>
+  );
+}
+
+function LogoField({ value, onChange }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+
+  async function upload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBusy(true); setErr(null);
+    try {
+      const { url } = await uploadsApi.image(file);
+      onChange(url);
+    } catch (ex) {
+      setErr(ex?.response?.data?.error || ex.message || 'Upload failed');
+    } finally {
+      setBusy(false);
+      e.target.value = '';
+    }
+  }
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-4 sm:items-start">
+      <div className="w-20 h-20 shrink-0 border border-gold-light/60 rounded flex items-center justify-center bg-off-white overflow-hidden">
+        {value
+          ? <img src={assetUrl(value)} alt="Logo" className="max-w-full max-h-full object-contain" />
+          : <span className="text-[10px] uppercase tracking-widest text-ink-muted">No logo</span>}
+      </div>
+      <div className="flex-1 space-y-2">
+        <div className="flex flex-wrap gap-2">
+          <label className="action-btn cursor-pointer">
+            {busy ? 'Uploading…' : 'Upload logo'}
+            <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={busy} onChange={upload} />
+          </label>
+          {value && <button type="button" onClick={() => onChange('')} className="action-btn-danger">Remove</button>}
+        </div>
+        <input className="input" placeholder="…or paste a logo image URL"
+          value={value || ''} onChange={(e) => onChange(e.target.value)} />
+        <div className="text-[10px] text-ink-muted">PNG/JPG/WEBP, up to 5 MB. Click “Save Changes” to persist. Appears on every quotation PDF.</div>
+        {err && <div className="text-[11px] text-danger">{err}</div>}
+      </div>
     </div>
   );
 }

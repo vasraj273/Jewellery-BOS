@@ -114,6 +114,73 @@ export async function softDelete(id, actor) {
   return update(id, { is_active: false }, actor);
 }
 
+/**
+ * Permanently delete a user. Two modes:
+ *
+ * - Default (real user, `purge=false`): removes ONLY the user account row.
+ *   The user disappears from the Users list and can no longer sign in, but
+ *   all their records survive — every user→data FK is ON DELETE SET NULL, so
+ *   quotations / leads / customers become unassigned, and the employee profile
+ *   (and its attendance / leaves / incentives) is kept (employees.user_id → NULL).
+ *
+ * - `purge=true` (demo/sample account): also wipes everything the account
+ *   produced — quotations, customers (cascade events/reminders), leads
+ *   (cascade followups), and the employee profile (cascade attendance / leaves
+ *   / incentives / compensation / documents) — so no trace remains in any
+ *   admin view (Users, History, Shifts, Attendance, Employees, …).
+ *
+ * audit_events are intentionally left intact in both modes (actor_user_id →
+ * NULL; actor_email is denormalised, preserving the trail).
+ *
+ * Returns { id, email, purge, purged } where `purged` reports row counts.
+ */
+export async function hardDelete(id, actor, { purge = false } = {}) {
+  const sql = getDb();
+  const target = await getRaw(id);
+  if (!target) {
+    const err = new Error('User not found');
+    err.status = 404; throw err;
+  }
+
+  // Safety: an actor cannot delete themselves.
+  if (actor && Number(actor.id) === Number(target.id)) {
+    const err = new Error('You cannot delete yourself');
+    err.status = 400; throw err;
+  }
+  // Safety: never remove the last active super_admin.
+  if (target.role === 'super_admin') {
+    const [{ count }] = await sql`
+      SELECT count(*)::int AS count FROM users
+      WHERE role = 'super_admin' AND is_active = true AND id <> ${id}
+    `;
+    if (count === 0) {
+      const err = new Error('Cannot delete the last active super_admin');
+      err.status = 400; throw err;
+    }
+  }
+
+  const purged = {};
+  await sql.begin(async (tx) => {
+    if (purge) {
+      const q  = await tx`DELETE FROM quotations WHERE owner_user_id = ${id}`;
+      // customers cascade customer_events + reminder_tasks (customer_id FKs).
+      const c  = await tx`DELETE FROM customers  WHERE assigned_user_id = ${id}`;
+      // leads cascade lead_followups (lead_id FK).
+      const l  = await tx`DELETE FROM leads WHERE assigned_user_id = ${id} OR created_by_user_id = ${id}`;
+      // employees FK cascade clears attendance / leaves / incentives / comp / docs.
+      const e  = await tx`DELETE FROM employees WHERE user_id = ${id}`;
+      purged.quotations = q.count;
+      purged.customers  = c.count;
+      purged.leads      = l.count;
+      purged.employees  = e.count;
+    }
+    // Real-user delete keeps records: only the account row goes (FKs SET NULL).
+    await tx`DELETE FROM users WHERE id = ${id}`;
+  });
+
+  return { id: Number(id), email: target.email, purge, purged };
+}
+
 async function getRaw(id) {
   const sql = getDb();
   const rows = await sql`SELECT * FROM users WHERE id = ${id} LIMIT 1`;

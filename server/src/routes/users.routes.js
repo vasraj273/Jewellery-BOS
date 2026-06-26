@@ -69,16 +69,19 @@ router.put('/:id/password', async (req, res, next) => {
   }
 });
 
-// Soft delete (is_active = false). Only super_admin.
+// Permanent delete. Only super_admin. `?purge=true` also wipes the user's
+// quotations / leads / customers; otherwise those are kept (unassigned).
 router.delete('/:id', requireSuperAdmin, async (req, res, next) => {
   try {
-    const user = await users.softDelete(req.params.id, req.user);
+    const purge = req.query.purge === 'true' || req.body?.purge === true;
+    const result = await users.hardDelete(req.params.id, req.user, { purge });
     audit.record({
-      actor: req.user, action: 'user.deactivate',
+      actor: req.user, action: purge ? 'user.purge' : 'user.delete',
       entityType: 'user', entityId: req.params.id,
+      metadata: { email: result.email, purge, purged: result.purged },
       req
     });
-    res.json({ success: true, data: user });
+    res.json({ success: true, data: result });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ success: false, error: e.message });
     next(e);

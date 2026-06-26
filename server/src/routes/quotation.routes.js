@@ -12,6 +12,7 @@ router.get('/:quoteId',               ctrl.getOne);
 router.get('/:quoteId/preview',       ctrl.preview);
 router.get('/:quoteId/pdf',           ctrl.pdf);
 router.post('/:quoteId/whatsapp/send',ctrl.sendWhatsApp);
+router.patch('/:quoteId/image',       ctrl.updateImage);
 router.delete('/:quoteId',            ctrl.remove);
 
 export default router;

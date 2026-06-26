@@ -256,6 +256,21 @@ export async function remove(quoteId, actor) {
   return res.count > 0;
 }
 
+/**
+ * Update only the product image of an existing quotation. Owner-scoped
+ * (admins unscoped). Cosmetic — does NOT touch the frozen pricing snapshot.
+ * Returns the updated row, or null if not found / out of scope.
+ */
+export async function updateImage(quoteId, imagePath, actor) {
+  const sql = getDb();
+  const ownerId = scopeFor(actor);
+  const path = imagePath ? String(imagePath) : '';
+  const rows = ownerId == null
+    ? await sql`UPDATE quotations SET product_image_path = ${path} WHERE quote_id = ${quoteId} RETURNING *`
+    : await sql`UPDATE quotations SET product_image_path = ${path} WHERE quote_id = ${quoteId} AND owner_user_id = ${ownerId} RETURNING *`;
+  return rows[0] || null;
+}
+
 function num(v) {
   return Number.isFinite(+v) ? +v : 0;
 }

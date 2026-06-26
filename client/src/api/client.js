@@ -53,6 +53,7 @@ export const quotationsApi = {
   calculate: (payload)          => api.post('/quotations/calculate', payload).then(r => r.data.data),
   previewDraft: (payload)       => api.post('/quotations/preview-draft', payload, { responseType: 'text' }).then(r => r.data),
   remove:    (id)               => api.delete(`/quotations/${id}`).then(r => r.data),
+  updateImage: (id, product_image_path) => api.patch(`/quotations/${id}/image`, { product_image_path }).then(r => r.data.data),
 
   // Auth-aware fetchers — go through axios so the JWT goes with them.
   // Plain <iframe src> / <a href> bypass interceptors and 401 on protected
@@ -82,7 +83,8 @@ export const usersApi = {
   create:        (payload)      => api.post('/users', payload).then(r => r.data.data),
   update:        (id, payload)  => api.put(`/users/${id}`, payload).then(r => r.data.data),
   resetPassword: (id, password) => api.put(`/users/${id}/password`, { password }).then(r => r.data),
-  deactivate:    (id)           => api.delete(`/users/${id}`).then(r => r.data.data)
+  deactivate:    (id)           => api.put(`/users/${id}`, { is_active: false }).then(r => r.data.data),
+  remove:        (id, purge = false) => api.delete(`/users/${id}`, { params: { purge } }).then(r => r.data.data)
 };
 
 export const auditApi = {
