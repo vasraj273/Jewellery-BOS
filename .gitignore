@@ -11,4 +11,13 @@ uploads/*
 !uploads/.gitkeep
 .vite/
 coverage/
+
+# AI / editor tooling (do not publish)
+.claude/
 .claude-flow/
+.obsidian/
+ruvector.db
+**/ruvector.db
+
+# Private business spec (not for public repo)
+Jewelry_Business_Operating_System.xlsx
